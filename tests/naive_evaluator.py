@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Mapping, NamedTuple
 
-from gatekeeper.models import Policy, World
+from common.models import Policy, World
 
 
 class NaiveDecision(NamedTuple):

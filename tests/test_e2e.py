@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import json
 
-from gatekeeper.harness import run
+from harness import run
 
 
 def _configure(monkeypatch, service_urls, fake_model_url, tmp_path, **overrides):
     values = {
-        "ENV_URL": service_urls.env,
+        "SANDBOX_URL": service_urls.env,
         "VERIFIER_URL": service_urls.verifier,
         "MODEL": "fake/native_submit",
         "API_KEY": "test-key",

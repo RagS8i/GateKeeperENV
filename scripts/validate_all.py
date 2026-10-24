@@ -9,13 +9,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from gatekeeper.generator import load_task_configs
-from gatekeeper.harness.limits import Limits
-from gatekeeper.harness.runner import run_gate
-from gatekeeper.harness.service_clients import EnvClient, VerifierClient
-from gatekeeper.http_util import make_handler, start_http_server
-from gatekeeper.services.env_server import EnvService
-from gatekeeper.services.verifier_server import VerifierService
+from verifier.generator import load_task_configs
+from harness.limits import Limits
+from harness.env import Env
+from harness.runner import run_gate
+from harness.service_clients import EnvClient, VerifierClient
+from common.http_util import make_handler, start_http_server
+from sandbox.server import EnvService
+from verifier.server import VerifierService
 
 
 def main() -> int:
@@ -64,12 +65,14 @@ def main() -> int:
         env_handler, host="127.0.0.1", port=0
     )
     try:
-        env = EnvClient(f"http://127.0.0.1:{env_port}")
-        verifier = VerifierClient(f"http://127.0.0.1:{verifier_port}")
+        env = Env(
+            EnvClient(f"http://127.0.0.1:{env_port}"),
+            VerifierClient(f"http://127.0.0.1:{verifier_port}"),
+            task_ids[0],
+        )
         args.out.mkdir(parents=True, exist_ok=True)
         summary = run_gate(
             env,
-            verifier,
             configs=configs,
             task_ids=task_ids,
             seed_override=args.seed,

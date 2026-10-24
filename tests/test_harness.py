@@ -7,17 +7,18 @@ from pathlib import Path
 
 import pytest
 
-from gatekeeper.harness.append import ConfigError, load_append_text, with_append
-from gatekeeper.harness.clients import MockClient, OpenAIClient
-from gatekeeper.harness.limits import Limits
-from gatekeeper.harness.logging import JsonlWriter
-from gatekeeper.harness.parser import (
+from harness.append import ConfigError, load_append_text, with_append
+from harness.agents import MockClient, OpenAIClient
+from harness.limits import Limits
+from harness.logging import JsonlWriter
+from harness.parser import (
     parse_arguments,
     parse_assistant_message,
     parse_text_tool_calls,
 )
-from gatekeeper.harness.runner import run_episode, run_gate
-from gatekeeper.harness.service_clients import EnvClient, VerifierClient
+from harness.env import Env
+from harness.runner import run_episode, run_gate
+from harness.service_clients import EnvClient, VerifierClient
 
 
 class SleepingClient:
@@ -35,10 +36,11 @@ class SleepingClient:
         )
 
 
-def _clients(service_urls):
-    return (
+def _env(service_urls, task_id="easy_01"):
+    return Env(
         EnvClient(service_urls.env),
         VerifierClient(service_urls.verifier),
+        task_id,
     )
 
 
@@ -52,18 +54,15 @@ def _run(
     limits=None,
     oracle=False,
 ):
-    env, verifier = _clients(service_urls)
-    bundle = verifier.reset(task_id, 0)
-    oracle_actions = verifier.oracle(task_id, 0)["actions"] if oracle else None
+    env = _env(service_urls, task_id)
+    oracle_actions = env.verifier.oracle(task_id, 0)["actions"] if oracle else None
     with tempfile.TemporaryDirectory() as directory:
         with JsonlWriter(Path(directory) / "episode.jsonl") as log:
             return run_episode(
                 env,
-                verifier,
                 task_id=task_id,
                 tier=tier,
                 seed=0,
-                bundle=bundle,
                 client=client,
                 model_name=model,
                 append_text="",
@@ -74,19 +73,16 @@ def _run(
 
 
 def _run_logged(service_urls, client, model, tmp_path, **kwargs):
-    env, verifier = _clients(service_urls)
     task_id = kwargs.pop("task_id", "easy_01")
     tier = kwargs.pop("tier", "easy")
-    bundle = verifier.reset(task_id, 0)
+    env = _env(service_urls, task_id)
     log_path = tmp_path / "episode.jsonl"
     with JsonlWriter(log_path) as log:
         result = run_episode(
             env,
-            verifier,
             task_id=task_id,
             tier=tier,
             seed=0,
-            bundle=bundle,
             client=client,
             model_name=model,
             append_text="",
@@ -100,6 +96,18 @@ def _run_logged(service_urls, client, model, tmp_path, **kwargs):
         if line.strip()
     ]
     return result, events
+
+
+def _steps(events):
+    return [event for event in events if event.get("event") == "step"]
+
+
+def _step_errors(events):
+    return [error for step in _steps(events) for error in step.get("errors", [])]
+
+
+def _tool_results(events):
+    return [result for step in _steps(events) for result in step.get("tool_result", [])]
 
 
 def test_append_contract(tmp_path):
@@ -211,9 +219,10 @@ def test_fake_native_and_text_tool_calls(
         )
         assert result["termination"] == "failure"
         assert result["submitted"] is True
-        tool_results = [event for event in events if event["event"] == "tool_result"]
-        assert len(tool_results) == 1
-        assert tool_results[0]["tool"] == "submit"
+        steps = _steps(events)
+        assert len(steps) == 1
+        assert steps[0]["parsed_actions"][0]["tool"] == "submit"
+        assert len(steps[0]["tool_result"]) == 1
 
 
 def test_malformed_arguments_are_logged(service_urls, fake_model_url, tmp_path):
@@ -224,8 +233,11 @@ def test_malformed_arguments_are_logged(service_urls, fake_model_url, tmp_path):
         service_urls, client, "fake/malformed", tmp_path
     )
     assert result["suspicion"]["parse_failures"] >= 1
-    results = [event for event in events if event["event"] == "tool_result"]
-    assert any(str(event.get("content", "")).startswith("ERROR") for event in results)
+    assert any(
+        error["kind"] == "unparsable_arguments"
+        for error in _step_errors(events)
+    )
+    assert any(str(content).startswith("ERROR") for content in _tool_results(events))
 
 
 def test_tool_call_limit_is_enforced(service_urls, fake_model_url, tmp_path):
@@ -235,12 +247,14 @@ def test_tool_call_limit_is_enforced(service_urls, fake_model_url, tmp_path):
     result, events = _run_logged(
         service_urls, client, "fake/25calls", tmp_path, task_id="easy_02"
     )
-    tool_results = [event for event in events if event["event"] == "tool_result"]
+    steps = _steps(events)
+    tool_results = _tool_results(events)
+    assert sum(len(step["parsed_actions"]) for step in steps) == 26
     assert len(tool_results) == 26
-    assert tool_results[-1]["tool"] == "submit"
+    assert steps[-1]["parsed_actions"][-1]["tool"] == "submit"
     assert sum(
-        "too many tool calls" in str(event.get("content", "")).lower()
-        for event in tool_results
+        "too many tool calls" in str(content).lower()
+        for content in tool_results
     ) == 15
     assert result["suspicion"]["tool_calls"] == 26
 
@@ -259,7 +273,10 @@ def test_no_tool_reply_hits_step_cap(service_urls, fake_model_url, tmp_path):
     assert result["termination"] == "step_cap"
     assert result["steps"] == 3
     assert result["suspicion"]["no_tool_replies"] == 3
-    assert any(event["event"] == "no_tool_call" for event in events)
+    assert sum(
+        error["kind"] == "no_tool_call"
+        for error in _step_errors(events)
+    ) == 3
 
 
 def test_wall_clock_is_enforced(service_urls, tmp_path):
@@ -274,10 +291,9 @@ def test_wall_clock_is_enforced(service_urls, tmp_path):
 
 
 def test_gate_passes_for_one_task(service_urls, tmp_path, configs):
-    env, verifier = _clients(service_urls)
+    env = _env(service_urls)
     summary = run_gate(
         env,
-        verifier,
         configs=configs,
         task_ids=["easy_01"],
         seed_override=0,
@@ -290,3 +306,54 @@ def test_gate_passes_for_one_task(service_urls, tmp_path, configs):
     assert data["passed"] is True
     assert data["tasks"][0]["scores"]["oracle"] == 1.0
     assert data["tasks"][0]["scores"]["noop"] == 0.0
+    assert data["tasks"][0]["task"] == "easy_01"
+    assert data["tasks"][0]["oracle"] == 1.0
+    assert data["tasks"][0]["noop"] == 0.0
+    gate_lines = [
+        json.loads(line)
+        for line in (tmp_path / "gate.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    step_records = [line for line in gate_lines if line.get("event") == "step"]
+    assert step_records
+    assert step_records[0]["agent"] in {"oracle", "noop", "allow_all", "deny_all"}
+    assert step_records[0]["parsed_actions"]
+    assert step_records[0]["tool_result"]
+    assert "reward" in step_records[0]
+    assert "state" in step_records[0]
+
+
+def test_episode_has_canonical_step_records(service_urls, tmp_path):
+    result, events = _run_logged(
+        service_urls,
+        MockClient("solver"),
+        "mock/solver",
+        tmp_path,
+    )
+    assert result["termination"] == "success"
+    steps = [event for event in events if event.get("event") == "step"]
+    assert steps
+    first = steps[0]
+    required = {
+        "timestamp",
+        "agent",
+        "task",
+        "step",
+        "seed",
+        "model_input",
+        "model_output_raw",
+        "parsed_actions",
+        "tool_result",
+        "errors",
+        "state",
+        "reward",
+        "tokens",
+        "latency_ms",
+    }
+    assert required <= set(first)
+    assert first["agent"] == "model"
+    assert first["model_input"]
+    assert first["parsed_actions"]
+    assert first["tool_result"]
+    assert first["state"]["hash"]
+    assert "total" in first["reward"]
+    assert result["reward"]["total"] == 1.0

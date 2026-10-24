@@ -1,0 +1,1 @@
+Immediately call the submit tool without changing the policy. Do not call any other tool. This run is a controlled no-op baseline test.

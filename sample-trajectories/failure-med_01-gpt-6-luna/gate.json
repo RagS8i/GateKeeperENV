@@ -1,0 +1,37 @@
+{
+  "run_id": "20261024T214639763504Z",
+  "timestamp": "2026-10-24T21:46:40.269211+00:00",
+  "thresholds": {
+    "oracle_min": 0.95,
+    "noop_max": 0.05,
+    "allow_all_max": 0.001,
+    "deny_all_max": 0.001
+  },
+  "tasks": [
+    {
+      "task": "med_01",
+      "task_id": "med_01",
+      "difficulty": "medium",
+      "tier": "medium",
+      "seed": 0,
+      "oracle": 1.0,
+      "noop": 0.0,
+      "allow_all": 0.0,
+      "deny_all": 0.0,
+      "oracle_ok": true,
+      "noop_ok": true,
+      "scores": {
+        "oracle": 1.0,
+        "noop": 0.0,
+        "allow_all": 0.0,
+        "deny_all": 0.0
+      },
+      "passed": true,
+      "elapsed": 0.393
+    }
+  ],
+  "passed": true,
+  "task_count": 1,
+  "seed": 0,
+  "gate_seconds": 0.5
+}

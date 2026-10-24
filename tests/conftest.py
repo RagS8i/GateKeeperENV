@@ -5,11 +5,11 @@ from typing import Iterator
 
 import pytest
 
-from gatekeeper.generator import load_task_configs
-from gatekeeper.http_util import make_handler, start_http_server
-from gatekeeper.services.env_server import EnvService
-from gatekeeper.services.verifier_server import VerifierService
-from gatekeeper.harness.fake_model_server import start_fake_model
+from verifier.generator import load_task_configs
+from common.http_util import make_handler, start_http_server
+from sandbox.server import EnvService
+from verifier.server import VerifierService
+from harness.fake_model_server import start_fake_model
 
 
 @dataclass(frozen=True)

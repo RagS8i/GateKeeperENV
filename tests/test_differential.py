@@ -10,8 +10,8 @@ import random
 
 import pytest
 
-from gatekeeper.evaluator import Evaluator
-from gatekeeper.models import (
+from common.evaluator import Evaluator
+from common.models import (
     ALL_ACTIONS,
     Group,
     Policy,

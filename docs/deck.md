@@ -60,7 +60,7 @@ task_id, tier, seed
 state_hash
 ```
 
-Never exposed to the env:
+Never exposed to the sandbox:
 
 ```text
 correct_policy
@@ -118,15 +118,15 @@ model API
    ^
 harness  (internet + tools + trusted)
  |   \
-env  verifier
-tools  trusted
+sandbox  verifier
+tools    trusted
 ```
 
-- `env`: tools only, no internet, no verifier route.
-- `verifier`: hidden answer key, no internet, no env route.
+- `sandbox`: tools only, no internet, no verifier route.
+- `verifier`: hidden answer key, no internet, no sandbox route.
 - `harness`: trusted model loop, gate, budgets, logs.
 
-One image. `docker compose up --build --abort-on-container-exit --exit-code-from harness`.
+Three images. `docker compose up --build --abort-on-container-exit --exit-code-from harness`.
 
 ---
 
@@ -186,19 +186,21 @@ The model is never called on a broken environment.
 - Verifier cache keyed by `(task_id, seed)`.
 - 12 tasks: easy, medium, hard.
 - All 12 passed the four-baseline gate at seed 0.
-- 72 local tests.
+- 77 local tests.
 - `baseline-results/gate.json` and sample trajectories included.
+- Real `gpt-6-luna` success on `med_01` and `easy_01`; controlled failure logged.
 
 ---
 
 ## Current limitations
 
-- No local Docker: Compose is configuration-reviewed, not executed here.
-- No hackathon API key: real-model calibration and real trajectories pending.
+- Docker Compose build and one-command run executed locally on 2026-10-25.
+- Real `gpt-6-luna` calibration: `med_01` and `easy_01` solved in 5 steps;
+  controlled no-op append failed at 0.0.
 - Hard task generation is slower; standalone seeds took roughly 8-20s.
 - `mock/solver` is a deterministic oracle-backed demo, not a model baseline.
 
-Next: run a real model across seeds and produce the PDF/demo artifacts.
+Next: broader model sweep across seeds and a short demo video.
 
 ---
 

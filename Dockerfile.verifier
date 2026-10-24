@@ -1,0 +1,24 @@
+# The verifier: owns the hidden answer key and scoring. Trusted network only.
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
+
+RUN useradd --create-home --uid 1000 verifier
+
+WORKDIR /app
+
+COPY requirements.txt ./
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install -r requirements.txt
+
+COPY common ./common
+COPY verifier ./verifier
+COPY tasks.json ./tasks.json
+
+USER verifier
+
+EXPOSE 8000
+CMD ["python", "-m", "verifier.server"]

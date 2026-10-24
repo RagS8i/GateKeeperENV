@@ -3,8 +3,8 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from gatekeeper.evaluator import Decision, Evaluator
-from gatekeeper.models import Group, Policy, Resource, Statement, User, World
+from common.evaluator import Decision, Evaluator
+from common.models import Group, Policy, Resource, Statement, User, World
 
 
 def make_statement(

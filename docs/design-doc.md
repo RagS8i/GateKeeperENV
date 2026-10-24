@@ -41,15 +41,15 @@ that emit JSON in text. No model-specific prompting or fine-tuning is required.
 
 | Threat | Mitigation |
 | --- | --- |
-| Agent reads `P*`, mutations or the matrix | Only the verifier has them. Env receives a sanitized bundle. Verifier and env are on separate internal networks. |
+| Agent reads `P*`, mutations or the matrix | Only the verifier has them. Sandbox receives a sanitized bundle. Verifier and sandbox are on separate internal networks. |
 | Agent hardcodes visible examples | Full matrix scoring; visible examples are a small, non-representative sample. |
 | Agent submits allow-all or deny-all | Protected allow-all and restricted-deny baselines make both score approximately zero; gate checks both. |
 | Agent submits the unchanged broken policy | No-op baseline gate and `E_start` denominator make a no-op score zero. |
 | Prompt injection via `APPEND_FILE` | The file is explicit, audited, copied into the run log and confined to `inputs/`; it does not change tools or scoring. |
 | Malformed or hostile tool calls | JSON object validation, Pydantic models, reference validation, 4K output cap, 10 calls/reply, 60s tool timeout. |
-| Env reaches the internet or verifier | `env` is on an internal network only; `verifier` is on a separate internal network; only `harness` has egress. |
-| Resource exhaustion | `pids_limit`, `mem_limit`, read-only filesystems for env/verifier, `cap_drop: ALL`, `no-new-privileges`, step/time caps. |
-| Answer leakage through logs | Gate logs omit payloads; episode logs contain only model-visible messages and tool output. |
+| Sandbox reaches the internet or verifier | `sandbox` is on an internal network only; `verifier` is on a separate internal network; only `harness` has egress. |
+| Resource exhaustion | `pids_limit`, `mem_limit`, read-only filesystems for sandbox/verifier, `cap_drop: ALL`, `no-new-privileges`, step/time caps. |
+| Answer leakage through logs | Gate logs contain scripted baseline actions only in the trusted harness log; the sandbox has no log mount or verifier route. Episode logs contain model-visible messages, tool output and state hashes, never the hidden matrix or answer key. |
 | Non-determinism | All generation and sampling is seeded; canonical state hashes. |
 
 ## 4. Architecture
@@ -70,7 +70,7 @@ that emit JSON in text. No model-specific prompting or fine-tuning is required.
               tools      |         | hidden score/oracle
                          v         v
                     +---------+  +----------+
-                    |   env   |  | verifier |
+                    | sandbox |  | verifier |
                     | tools + |  | P*,      |
                     | world   |  | matrix   |
                     +---------+  +----------+
@@ -78,15 +78,15 @@ that emit JSON in text. No model-specific prompting or fine-tuning is required.
                      (internal)   (internal)
 ```
 
-There is one image. Docker Compose runs three services:
+There are three images. Docker Compose runs three services:
 
-- `env` — only on `tools`, which is internal. It has no route to the verifier
+- `sandbox` — only on `tools`, which is internal. It has no route to the verifier
   or the internet.
 - `verifier` — only on `trusted`, which is internal.
 - `harness` — on `tools`, `trusted` and `internet`. It is the only process that
   can reach the model API.
 
-The split prevents the env from calling the verifier even if an input-validation
+The split prevents the sandbox from calling the verifier even if an input-validation
 bug existed. The harness must be trusted because it orchestrates the gate and
 the model; the model itself never receives verifier endpoints or keys.
 
@@ -122,8 +122,9 @@ matching statement as the deciding statement. Statement fields:
 `state_hash(world, policy)` serializes the world and policy with sorted keys,
 sorted principals/actions/resources/exceptions, sorted condition keys and
 sorted statements by ID. The hash is a stable 8-hex-character prefix of
-SHA-256. It is visible to the agent and used to verify that the env and
-verifier agree on the reset state.
+SHA-256. `Env.reset` returns it and the harness writes it to the logs; it is
+not exposed as a tool. It is used to verify that the sandbox and verifier agree
+on the reset state.
 
 ## 6. Evaluator semantics
 
@@ -278,9 +279,14 @@ score is always the full-matrix score.
 | Allow-all | `score <= 0.001` |
 | Deny-all | `score <= 0.001` |
 
-The gate runs before the model on every selected task. A gate failure exits 2
-and prevents the model call. This is the main defense against an environment
-that is trivially passable or accidentally denies/allow everything.
+The gate runs before the model on every selected task. The reference and no-op
+baselines are `harness/agents.py:oracle_actions` and `noop_actions`; the gate
+executes both through the same sandbox and verifier path as the model. Thin
+CLI wrappers in `scripts/reference_solution.py` and `scripts/noop_agent.py`
+expose the same paths for manual runs. A gate
+failure exits 2 and prevents the model call. This is the main defense against
+an environment that is trivially passable or accidentally denies/allow
+everything.
 
 ## 9. Environment and tools
 
@@ -297,9 +303,9 @@ state. It owns:
 Tool responses are clipped to 4,000 characters. `put_policy` validates the
 statement with Pydantic, checks that referenced users/groups/resources/tags/
 actions exist, and replaces by ID or appends. It does not allow a policy to grow
-past 200 statements. `submit` freezes the env; later edits return an error.
+past 200 statements. `submit` freezes the sandbox; later edits return an error.
 
-The env does not know `P*`, mutations or the correct decisions. Its evaluator is
+The sandbox does not know `P*`, mutations or the correct decisions. Its evaluator is
 only for `simulate` and `check_examples`, both of which operate on the current
 candidate policy.
 
@@ -307,7 +313,7 @@ candidate policy.
 
 ### Loop
 
-1. Wait for env and verifier health.
+1. Wait for sandbox and verifier health.
 2. Run the gate.
 3. Reset the selected task and construct the system/user messages.
 4. For each step:
@@ -315,7 +321,7 @@ candidate policy.
    - call the model with native tools;
    - parse native tool calls, legacy `function_call`, or JSON-in-text calls;
    - enforce at most 10 calls per reply;
-   - execute tools through the env;
+   - execute tools through the sandbox;
    - append tool results;
    - request a shadow score;
    - trim old assistant/tool units if the context budget is exceeded;
@@ -353,6 +359,19 @@ arguments, allow-all edits, repeated calls, simulate calls, submit calls,
 no-tool replies and maximum context ratio. This is diagnostic evidence, not a
 score input; a legitimate policy can add an allow-all baseline statement.
 
+### Structured telemetry
+
+`episode.jsonl` contains one canonical step record per model reply. Each record
+has `timestamp`, `agent`, `task`, `step`, `seed`, `model_input`,
+`model_output_raw`, `parsed_actions`, `tool_result`, `errors`, `state`,
+`reward`, `tokens` and `latency_ms`. `state` is a hash plus statement count, not
+a full policy snapshot. `reward` contains the sampled shadow score and its
+components; the final `episode_end` record contains the full verifier result
+with a `total` reward alias. `gate.jsonl` uses the same canonical shape for
+oracle, no-op, allow-all and deny-all actions, with `agent` set to the baseline
+name. These records are written by the trusted harness and are not mounted into
+the sandbox.
+
 ## 11. Determinism and reproducibility
 
 - Task generation uses `random.Random(seed)` for world, feature selection,
@@ -360,29 +379,29 @@ score input; a legitimate policy can add an allow-all baseline statement.
 - The verifier caches tasks by `(task_id, seed)` under a lock.
 - All decisions are deterministic by statement ID and canonical selector order.
 - State hashes are canonical.
-- The gate and episode logs include the seed, model name, append hash, step
-  count and final score.
+- The gate and episode logs include the seed, model name, step count and final
+  score; the run summary records the append hash.
 - A 1,000-seed generation soak on `easy_01` completed with zero failures and
   zero determinism failures (mean 0.158s per seed, p95 0.163s); additional seeds were
   checked across medium and hard tasks. The all-task gate covers seed 0.
 
 ## 12. Testing and evidence
 
-The repository includes 72 tests:
+The repository includes 77 tests:
 
 - evaluator unit and differential tests;
 - models/canonicalization tests;
 - generator invariants, determinism, sanitization and overfit resistance;
 - verifier service and scoring tests;
-- env tool tests;
+- sandbox tool tests and seeded `Env.reset` tests;
 - HTTP service and harness integration tests;
 - parser, append, limits, fake model and one-command run tests;
 - gate pass test.
 
 Local evidence:
 
-- All twelve tasks passed the four-baseline gate at seed 0 in about 43 seconds,
-  including generation and scoring.
+- All twelve tasks passed the four-baseline gate at seed 0 in about 15.7
+  seconds, including generation and scoring.
 - Standalone generation soaks: `easy_01` 1,000 seeds with zero failures;
   `easy_02` 50; `med_01` 20; `med_02`/`med_03`/`med_04` 10 each; hard tasks
   2-3 seeds each. No failures after the mutation fallback was widened.
@@ -390,9 +409,20 @@ Local evidence:
 - The offline solver solves `med_01` in three batched turns with score 1.0.
 - The offline no-op, allow-all and deny-all clients all score 0.0.
 
-Docker Compose has not been executed on the development machine because Docker
-is not installed there. The configuration is written for the reference
-one-command contract and should be validated in the judging environment.
+Docker Compose was executed on the development machine on 2026-10-25: all
+three images built, the three services started, the `med_01` gate passed
+(oracle 1.000, no-op/allow-all/deny-all 0.000), and the offline solver finished
+with score 1.0 in three steps. A clean `--no-cache` three-image build took
+21.8s; the Docker all-task gate took 15.7s.
+
+The same one-command contract was exercised with `gpt-6-luna`:
+
+- `med_01`: `success`, score 1.0, 5 steps, 14.2s;
+- `easy_01`: `success`, score 1.0, 5 steps, 18.1s;
+- controlled no-op append on `med_01`: `failure`, score 0.0, 1 step, 2.1s.
+
+The full logs are in `test-run-logs/`; the real success and failure trajectories
+are also copied into `sample-trajectories/`.
 
 ## 13. Risks and tradeoffs
 
@@ -408,16 +438,17 @@ one-command contract and should be validated in the judging environment.
   malicious host.
 - **Mock solver.** The offline solver consumes oracle actions. It is useful for
   the gate/demo but is not evidence of model reasoning.
-- **No code execution.** The env tools are declarative. This reduces risk but
+- **No code execution.** The sandbox tools are declarative. This reduces risk but
   also limits the environment to policy-repair tasks.
 
 ## 14. Future work
 
-- Run a real model at multiple temperatures and report success/failure rates.
+- Run a broader real-model sweep across models, temperatures, tasks and seeds,
+  and report success/failure rates.
 - Extend the generator to attribute-level policies and policy versioning.
 - Add a differential fuzzer that compares the compiled evaluator with a naive
   interpreter on random policies and requests.
 - Expand the generation soak across every task and publish timing percentiles.
-- Produce a PDF of the deck and a short demo video.
+- Produce a short demo video.
 - Add an optional model-side defender that detects prompt injection in
   `APPEND_FILE`.

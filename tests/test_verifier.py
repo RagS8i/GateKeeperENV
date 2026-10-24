@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from gatekeeper.models import Policy
-from gatekeeper.verifier_core import TaskService
+from common.models import Policy
+from verifier.core import TaskService
 
 
 def test_verifier_lists_all_tasks(configs):

@@ -57,7 +57,7 @@ This distinction is why Gatekeeper is not simple data retrieval. The agent can r
 
 ### 2. Policy semantics create non-local interactions
 
-`gatekeeper/evaluator.py` implements the semantics deliberately:
+`common/evaluator.py` implements the semantics deliberately:
 
 - **Default deny.** A request is allowed only if an allow statement applies.
 - **Deny overrides allow.** The evaluator scans every matching deny first, then every matching allow.
@@ -129,7 +129,7 @@ The six mutation classes are designed to require that reasoning: `drop_statement
 
 ### 1. Container isolation and trust boundaries
 
-`docker-compose.yml` defines one image and three services:
+`docker-compose.yml` defines three images and three services:
 
 ```text
                          model API (optional internet)
@@ -141,23 +141,23 @@ The six mutation classes are designed to require that reasoning: `drop_statement
                               |       |
                      tools    |       |    hidden score/oracle
                               v       v
-                          +------+  +----------+
-                          | env  |  | verifier |
-                          +------+  +----------+
+                          +---------+  +----------+
+                          | sandbox |  | verifier |
+                          +---------+  +----------+
                          no internet, no verifier route
 ```
 
-- `env` is attached only to the internal `tools` network. It receives the sanitized bundle and exposes the agent-facing tools.
+- `sandbox` is attached only to the internal `tools` network. It receives the sanitized bundle and exposes the agent-facing tools.
 - `verifier` is attached only to the internal `trusted` network. It holds the generated task, correct policy, mutation records, reference decisions, matrix, and oracle.
 - `harness` is attached to `tools`, `trusted`, and `internet`. It is the only service that can reach the model API, and it is the only service that calls the verifier's score/oracle endpoints.
 
-The `env` and `verifier` containers are `read_only`, with `cap_drop: ALL`, `no-new-privileges`, bounded PIDs and memory, and writable `/tmp` via tmpfs. Healthchecks gate startup; `depends_on` ensures the harness waits for both services before the baseline gate.
+The `sandbox` and `verifier` containers are `read_only`, with `cap_drop: ALL`, `no-new-privileges`, bounded PIDs and memory, and writable `/tmp` via tmpfs. Healthchecks gate startup; `depends_on` ensures the harness waits for both services before the baseline gate.
 
 The model never gets a shell, a filesystem mount, or a direct route to the verifier. It gets structured tool calls. The harness is trusted; the design protects against model actions and accidental answer leakage, not against a malicious operator with host access.
 
 ### 2. The hidden answer key
 
-`gatekeeper/verifier_core.py` implements `TaskService`:
+`verifier/core.py` implements `TaskService`:
 
 - `get_task(task_id, seed)` generates or retrieves a cached `GeneratedTask` keyed by `(task_id, seed)`.
 - `reset(...)` returns only `GeneratedTask.sanitized_bundle()`.
@@ -177,7 +177,7 @@ The exposed environment API therefore provides no route to the hidden matrix. Th
 
 ### 3. Strict tool parsing and bounded execution
 
-The model interface is intentionally narrow. `gatekeeper/harness/parser.py` accepts the common wire formats used by OpenAI-compatible providers:
+The model interface is intentionally narrow. `harness/parser.py` accepts the common wire formats used by OpenAI-compatible providers:
 
 - native `tool_calls`;
 - legacy `function_call`;
@@ -194,7 +194,7 @@ That normalization improves model compatibility, but execution remains strict:
 - `submit` freezes the environment; later edits return an error.
 - The model sees only the ten declared tools; there is no shell, HTTP, filesystem, or code-execution tool.
 
-`gatekeeper/env_core.py` validates edits before they enter the policy:
+`sandbox/env.py` validates edits before they enter the policy:
 
 - Pydantic models use `extra="forbid"` and explicit selector validators.
 - `put_policy` checks that referenced users, groups, resources, tags, and actions exist in the world.
@@ -207,7 +207,7 @@ The harness also records suspicion telemetry: unknown tools, parse failures, pat
 
 ### 4. Deterministic seeding and reproducibility
 
-`tasks.json` defines twelve tasks with fixed dimensions and seeds. `gatekeeper/generator.py` uses `random.Random(seed)` for world construction, group membership, resource tags, statement generation, mutation selection, visible examples, and sample selection. The harness passes `SEED` as the override, so the same `(task_id, seed)` produces the same task and matrix on every run.
+`tasks.json` defines twelve tasks with fixed dimensions and seeds. `verifier/generator.py` uses `random.Random(seed)` for world construction, group membership, resource tags, statement generation, mutation selection, visible examples, and sample selection. The harness passes `SEED` as the override, so the same `(task_id, seed)` produces the same task and matrix on every run.
 
 Determinism is reinforced by:
 
@@ -258,16 +258,16 @@ The generator also reserves a protected allow-all baseline and a protected restr
 
 ### 1. Startup and pre-flight gate
 
-`gatekeeper/harness/run.py` is the entrypoint. On startup it:
+`harness/run.py` is the entrypoint. On startup it:
 
 1. Loads `tasks.json`.
 2. Parses `MODEL`, `TASK_ID`, `SEED`, `MODE`, `MAX_STEPS`, `MAX_SECONDS`, and `APPEND_FILE`.
 3. Validates numeric configuration and exits `3` on bad values.
 4. Creates `logs/<run-id>/` with `run.jsonl`.
-5. Waits for `/health` on both `ENV_URL` and `VERIFIER_URL`.
+5. Waits for `/health` on both `SANDBOX_URL` and `VERIFIER_URL`.
 6. Runs the baseline gate before any model call.
 
-The gate in `runner.py` resets each selected task in the verifier, obtains the oracle actions, constructs no-op, allow-all, and deny-all actions, executes all four through the same env/tool path, and scores them. For `med_01` in the saved success run:
+The gate in `runner.py` resets each selected task in the verifier, obtains the oracle actions, constructs no-op, allow-all, and deny-all actions, executes all four through the same sandbox/tool path, and scores them. For `med_01` in the saved success run:
 
 | Baseline | Score | Requirement |
 | --- | ---: | --- |
@@ -276,15 +276,14 @@ The gate in `runner.py` resets each selected task in the verifier, obtains the o
 | Allow-all | 0.000 | `<= 0.001` |
 | Deny-all | 0.000 | `<= 0.001` |
 
-The task passed in 1.707 seconds. The full twelve-task gate passed in about 41.7 seconds. If the gate fails, the harness writes a `gate_failed` summary and exits `2` without calling the model.
+The `med_01` gate passed in about 0.5 seconds in Docker. The full twelve-task gate passed in about 15.7 seconds. If the gate fails, the harness writes a `gate_failed` summary and exits `2` without calling the model.
 
 ### 2. Episode loop
 
 After the gate, the harness performs the following loop (`run_episode`):
 
 ```text
-bundle = verifier.reset(task_id, seed)
-reset  = env.reset(bundle)
+reset = env.reset(seed)
 messages = [system_prompt, reset.observation]
 
 for step in 1..MAX_STEPS:
@@ -292,13 +291,13 @@ for step in 1..MAX_STEPS:
     reply = model.complete(trimmed, tool_specs)
     calls = parse_tool_calls(reply)
     for call in calls[:10]:
-        result = env.tool(call.name, call.arguments)
+        result = env.step(call.name, call.arguments)
         messages += tool_result
     state = env.state()
-    shadow = verifier.shadow(task_id, state.policy, seed)
+    shadow = env.shadow(state.policy)
     if submitted: break
 
-final = verifier.score(task_id, state.policy, seed)
+final = env.score(state.policy)
 termination = success if submitted and final.score >= 0.95 else failure
 ```
 
@@ -370,6 +369,28 @@ The episode used 21 tool calls: 0 unknown tools, 0 parse failures, 0 path-like a
 
 The `mock/solver` is deliberately oracle-backed: `MockClient.start` receives `oracle_actions` from the verifier when the harness selects `mock/solver`. This trace is therefore a validation of the environment, parser, tool state machine, logging, and scoring path, not evidence of language-model reasoning. A real model receives no oracle action list and must use `get_requirements`, `lookup`, `list_policies`, `simulate`, `diff`, and `check_examples` to construct its edits.
 
+### 3b. Real-model calibration: `gpt-6-luna`
+
+The one-command contract was also exercised with a real OpenAI-compatible model,
+not only the oracle-backed mock:
+
+| Run | Task | Termination | Score | Steps | Elapsed | Tool calls |
+| --- | --- | --- | ---: | ---: | ---: | ---: |
+| Real success | `med_01` | `success` | 1.0 | 5 | 14.2s | 20 |
+| Real success | `easy_01` | `success` | 1.0 | 5 | 18.1s | 17 |
+| Controlled no-op | `med_01` | `failure` | 0.0 | 1 | 2.1s | 1 |
+
+The successful `med_01` trace used 2,310-6,375 prompt+completion tokens per
+step, peaked at 15.5% of the context budget, and produced no unknown tools or
+parse failures. The controlled failure used an explicit `APPEND_FILE` asking
+the model to submit the broken policy immediately; it scored 0.0 with 191 false
+allows, 72 false denies and 645 weighted errors. This is a test of the append
+and failure paths, not a model-capability claim.
+
+Full logs are in `test-run-logs/real-success-med_01/`,
+`test-run-logs/real-success-easy_01/` and
+`test-run-logs/real-failure-med_01/`.
+
 ### 4. Negative control: submit the broken policy
 
 Source: `sample-trajectories/failure-med_01-fake-native-submit/episode.jsonl`.
@@ -403,10 +424,12 @@ The failure is exact: the broken policy's weighted errors equal `E_start`, so th
 
 | Check | Result |
 | --- | --- |
-| Unit/integration suite | `72 passed` in 32.75s |
-| Twelve-task baseline gate | `12/12` passed, about 41.7s |
+| Unit/integration suite | `77 passed` in about 20s |
+| Twelve-task baseline gate | `12/12` passed, about 15.7s |
 | Demo success trace | `med_01`, 3 steps, `1.0`, 0 false allows/denies |
-| Demo failure trace | `med_01`, 1 step, `0.0`, 191 false allows, 72 false denies |
+| Real success trace | `gpt-6-luna` `med_01`, 5 steps, `1.0`, 14.2s |
+| Real success trace | `gpt-6-luna` `easy_01`, 5 steps, `1.0`, 18.1s |
+| Real failure trace | controlled no-op append, 1 step, `0.0`, 191 false allows, 72 false denies |
 | Generation soak | `easy_01` 1,000 seeds, 0 failures, 0 determinism failures |
 | Additional soaks | `med_01` 20 seeds; `hard_03` 3 seeds; zero failures |
 | Shadow sanity | correct policy `1.0`, broken policy `0.0` on fixed sample |
@@ -414,13 +437,15 @@ The failure is exact: the broken policy's weighted errors equal `E_start`, so th
 Artifacts:
 
 - `baseline-results/gate.json` - all-task gate evidence.
-- `sample-trajectories/` - success and failure traces.
-- `test-run-logs/` - gate, pytest, validate-all, and soak logs.
+- `sample-trajectories/` - mock and real success/failure traces.
+- `test-run-logs/` - gate, pytest, validate-all, soak, and three real model-run logs.
+- `scripts/reference_solution.py` / `scripts/noop_agent.py` - runnable baseline wrappers.
 
 Current limitations are explicit:
 
-- Docker Compose was configuration-reviewed but not executed on the authoring machine because Docker is unavailable there; the judging environment must run the one-command contract.
-- No hackathon API key or GPT-Luna endpoint was available, so real-model calibration is pending. The harness and fake-model path are fully exercised; the included `mock/solver` is an oracle-backed control, not a model baseline.
+- The real-model evidence is a smoke calibration, not a statistically meaningful sweep across models, temperatures, tasks and seeds.
+- Docker Compose was executed locally on 2026-10-25, including a clean three-image build and the full one-command run.
+- The included `mock/solver` is an oracle-backed control, not a model baseline; the real `gpt-6-luna` traces are separate.
 
 ---
 
@@ -428,18 +453,22 @@ Current limitations are explicit:
 
 | File | Responsibility |
 | --- | --- |
-| `gatekeeper/verifier_core.py` | Hidden task service, cache, reset/score/shadow/oracle |
-| `gatekeeper/generator.py` | Deterministic worlds, P*, mutations, hidden matrix, sanitized bundle |
-| `gatekeeper/evaluator.py` | Deny-first semantics, nested-group closure, wildcard/tag matching |
-| `gatekeeper/matrix.py` | Full Cartesian matrix, sampling, error counts, score formula |
-| `gatekeeper/requirements.py` | Lossless natural-language rendering of P* |
-| `gatekeeper/env_core.py` | Sanitized tool environment, validation, history, `submit` freeze |
-| `gatekeeper/services/env_server.py` | Environment HTTP service |
-| `gatekeeper/services/verifier_server.py` | Trusted verifier HTTP service |
-| `gatekeeper/harness/runner.py` | Episode loop, gate, shadow scoring, budget enforcement |
-| `gatekeeper/harness/run.py` | Configuration, modes, health checks, logging, exit codes |
-| `gatekeeper/harness/parser.py` | Native, legacy, and text-embedded tool-call parsing |
-| `gatekeeper/harness/clients.py` | OpenAI-compatible client and deterministic mock clients |
+| `verifier/core.py` | Hidden task service, cache, reset/score/shadow/oracle |
+| `verifier/generator.py` | Deterministic worlds, P*, mutations, hidden matrix, sanitized bundle |
+| `common/evaluator.py` | Deny-first semantics, nested-group closure, wildcard/tag matching |
+| `verifier/matrix.py` | Full Cartesian matrix, sampling, error counts, score formula |
+| `verifier/requirements.py` | Lossless natural-language rendering of P* |
+| `sandbox/env.py` | Sanitized tool environment, validation, history, `submit` freeze |
+| `sandbox/server.py` | Environment HTTP service |
+| `verifier/server.py` | Trusted verifier HTTP service |
+| `harness/env.py` | Public `reset(seed)` / `step` / `score` facade over both services |
+| `harness/runner.py` | Episode loop, gate, shadow scoring, budget enforcement |
+| `harness/run.py` | Configuration, modes, health checks, logging, exit codes |
+| `harness/parser.py` | Native, legacy, and text-embedded tool-call parsing |
+| `harness/agents.py` | OpenAI-compatible client, mock clients, `oracle_actions` and `noop_actions` |
+| `common/tasks.py` | Task config, tiers, mutation kinds, `tasks.json` loader |
 | `docker-compose.yml` | Three-service isolation, healthchecks, networks, resource limits |
+| `scripts/reference_solution.py` | Runnable reference-solution baseline |
+| `scripts/noop_agent.py` | Runnable no-op baseline |
 | `tasks.json` | Twelve task configurations |
 | `sample-trajectories/*/episode.jsonl` | Real execution transcripts used above |

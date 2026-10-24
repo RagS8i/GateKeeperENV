@@ -1,0 +1,217 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [7 0 R 9 0 R 11 0 R 13 0 R] /Count 4 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Length 2431 >>
+stream
+BT
+/F2 21 Tf 1 0 0 1 52 738 Tm (Gatekeeper Deck) Tj
+/F2 21 Tf 1 0 0 1 52 697 Tm (Gatekeeper) Tj
+/F2 13 Tf 1 0 0 1 52 657 Tm (An RL environment that cannot be solved by allow-all, deny-all,) Tj
+/F2 13 Tf 1 0 0 1 52 640 Tm (or memorizing examples) Tj
+/F1 10 Tf 1 0 0 1 52 616 Tm (Model-agnostic access-policy repair  deterministic hidden verifier  one-command Docker run) Tj
+/F2 16 Tf 1 0 0 1 52 579 Tm (The task) Tj
+/F1 10 Tf 1 0 0 1 52 552 Tm (The agent receives:) Tj
+/F1 10 Tf 1 0 0 1 52 533 Tm (- a company world: users, nested groups, resources, tags, actions;) Tj
+/F1 10 Tf 1 0 0 1 52 519 Tm (- a broken access policy;) Tj
+/F1 10 Tf 1 0 0 1 52 505 Tm (- natural-language access requirements;) Tj
+/F1 10 Tf 1 0 0 1 52 491 Tm (- 5-9 visible examples;) Tj
+/F1 10 Tf 1 0 0 1 52 477 Tm (- a tool interface.) Tj
+/F1 10 Tf 1 0 0 1 52 458 Tm (The agent must repair the policy and submit it.) Tj
+/F1 10 Tf 1 0 0 1 52 439 Tm (The verifier scores the result over every user x action x resource x context variant.) Tj
+/F2 16 Tf 1 0 0 1 52 402 Tm (Why access-policy repair?) Tj
+/F1 10 Tf 1 0 0 1 52 375 Tm (- Real, high-stakes security work: authorization mistakes are costly.) Tj
+/F1 10 Tf 1 0 0 1 52 361 Tm (- Exact semantics: default deny, deny-overrides-allow, conditions, exceptions,) Tj
+/F1 10 Tf 1 0 0 1 52 347 Tm (  groups, wildcards.) Tj
+/F1 10 Tf 1 0 0 1 52 333 Tm (- Naturally multi-step: inspect, hypothesize, edit, simulate, verify.) Tj
+/F1 10 Tf 1 0 0 1 52 319 Tm (- Easy to create semantic mutations with measurable impact.) Tj
+/F1 10 Tf 1 0 0 1 52 305 Tm (- Hard to fake: the full matrix exposes overfitting immediately.) Tj
+/F2 16 Tf 1 0 0 1 52 268 Tm (The hidden verifier) Tj
+/F3 8 Tf 1 0 0 1 60 236 Tm (score = max\(0, 1 - \(3 * false_allows + false_denies\) / E_start\)) Tj
+/F1 10 Tf 1 0 0 1 52 214 Tm (- False allow is weighted 3x false deny.) Tj
+/F1 10 Tf 1 0 0 1 52 200 Tm (- E_start is the broken policy's weighted error count.) Tj
+/F1 10 Tf 1 0 0 1 52 186 Tm (- Full Cartesian matrix, not visible examples.) Tj
+/F1 10 Tf 1 0 0 1 52 172 Tm (- Oracle actions exist only in the verifier.) Tj
+/F1 10 Tf 1 0 0 1 52 158 Tm (- Shadow sample after each model turn for progress logs.) Tj
+/F2 16 Tf 1 0 0 1 52 121 Tm (What the agent sees) Tj
+/F1 10 Tf 1 0 0 1 52 94 Tm (Sanitized bundle only:) Tj
+/F3 8 Tf 1 0 0 1 60 70 Tm (world) Tj
+/F3 8 Tf 1 0 0 1 60 58 Tm (broken_policy) Tj
+/F1 8 Tf 1 0 0 1 524 24 Tm (Page 1 of 4) Tj
+ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Length 2413 >>
+stream
+BT
+/F3 8 Tf 1 0 0 1 60 738 Tm (requirements) Tj
+/F3 8 Tf 1 0 0 1 60 726 Tm (visible_examples) Tj
+/F3 8 Tf 1 0 0 1 60 714 Tm (task_id, tier, seed) Tj
+/F3 8 Tf 1 0 0 1 60 702 Tm (state_hash) Tj
+/F1 10 Tf 1 0 0 1 52 680 Tm (Never exposed to the sandbox:) Tj
+/F3 8 Tf 1 0 0 1 60 656 Tm (correct_policy) Tj
+/F3 8 Tf 1 0 0 1 60 644 Tm (mutations) Tj
+/F3 8 Tf 1 0 0 1 60 632 Tm (reference_decisions) Tj
+/F3 8 Tf 1 0 0 1 60 620 Tm (matrix) Tj
+/F3 8 Tf 1 0 0 1 60 608 Tm (e_start) Tj
+/F3 8 Tf 1 0 0 1 60 596 Tm (oracle_actions) Tj
+/F1 10 Tf 1 0 0 1 52 574 Tm (A test walks the bundle and checks every forbidden key.) Tj
+/F2 16 Tf 1 0 0 1 52 537 Tm (Deny-list construction blocks trivial policies) Tj
+/F1 10 Tf 1 0 0 1 52 510 Tm (Every correct policy contains:) Tj
+/F1 10 Tf 1 0 0 1 52 491 Tm (1. protected allow-all s001;) Tj
+/F1 10 Tf 1 0 0 1 52 477 Tm (2. protected deny-all-actions on tag:scope:restricted s002;) Tj
+/F1 10 Tf 1 0 0 1 52 463 Tm (3. feature denies with conditions, groups and exceptions;) Tj
+/F1 10 Tf 1 0 0 1 52 449 Tm (4. random denies.) Tj
+/F1 10 Tf 1 0 0 1 52 430 Tm (Result:) Tj
+/F3 8 Tf 1 0 0 1 56 411 Tm (| Policy | Score |) Tj
+/F3 8 Tf 1 0 0 1 56 399 Tm (| Oracle | 1.000 |) Tj
+/F3 8 Tf 1 0 0 1 56 387 Tm (| Broken / no-op | 0.000 |) Tj
+/F3 8 Tf 1 0 0 1 56 375 Tm (| Allow-all | 0.000 |) Tj
+/F3 8 Tf 1 0 0 1 56 363 Tm (| Deny-all | 0.000 |) Tj
+/F1 10 Tf 1 0 0 1 52 346 Tm (The gate enforces all four on every task.) Tj
+/F2 16 Tf 1 0 0 1 52 309 Tm (Six semantic mutations) Tj
+/F1 10 Tf 1 0 0 1 52 282 Tm (- drop_statement) Tj
+/F1 10 Tf 1 0 0 1 52 268 Tm (- widen_wildcard) Tj
+/F1 10 Tf 1 0 0 1 52 254 Tm (- remove_condition) Tj
+/F1 10 Tf 1 0 0 1 52 240 Tm (- remove_deny) Tj
+/F1 10 Tf 1 0 0 1 52 226 Tm (- change_group) Tj
+/F1 10 Tf 1 0 0 1 52 212 Tm (- flip_effect) Tj
+/F1 10 Tf 1 0 0 1 52 193 Tm (The generator measures mutation impact on a hidden sample, rejects weak edits,) Tj
+/F1 10 Tf 1 0 0 1 52 179 Tm (tries dedicated feature targets first, and keeps protected baselines immutable.) Tj
+/F2 16 Tf 1 0 0 1 52 142 Tm (Three services, two internal networks) Tj
+/F3 8 Tf 1 0 0 1 60 110 Tm (model API) Tj
+/F3 8 Tf 1 0 0 1 60 98 Tm (   ^) Tj
+/F3 8 Tf 1 0 0 1 60 86 Tm (harness  \(internet + tools + trusted\)) Tj
+/F3 8 Tf 1 0 0 1 60 74 Tm ( |   \\) Tj
+/F3 8 Tf 1 0 0 1 60 62 Tm (sandbox  verifier) Tj
+/F3 8 Tf 1 0 0 1 60 50 Tm (tools    trusted) Tj
+/F1 8 Tf 1 0 0 1 524 24 Tm (Page 2 of 4) Tj
+ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 8 0 R >>
+endobj
+10 0 obj
+<< /Length 2540 >>
+stream
+BT
+/F1 10 Tf 1 0 0 1 52 738 Tm (- sandbox: tools only, no internet, no verifier route.) Tj
+/F1 10 Tf 1 0 0 1 52 724 Tm (- verifier: hidden answer key, no internet, no sandbox route.) Tj
+/F1 10 Tf 1 0 0 1 52 710 Tm (- harness: trusted model loop, gate, budgets, logs.) Tj
+/F1 10 Tf 1 0 0 1 52 691 Tm (Three images. docker compose up --build --abort-on-container-exit --exit-code-from) Tj
+/F1 10 Tf 1 0 0 1 52 677 Tm (harness.) Tj
+/F2 16 Tf 1 0 0 1 52 640 Tm (Tools and limits) Tj
+/F1 10 Tf 1 0 0 1 52 613 Tm (10 tools:) Tj
+/F1 10 Tf 1 0 0 1 52 594 Tm (get_requirements, list_policies, lookup, simulate, put_policy,) Tj
+/F1 10 Tf 1 0 0 1 52 580 Tm (delete_policy, undo, diff, check_examples, submit.) Tj
+/F1 10 Tf 1 0 0 1 52 561 Tm (Limits:) Tj
+/F1 10 Tf 1 0 0 1 52 542 Tm (- 40 model steps) Tj
+/F1 10 Tf 1 0 0 1 52 528 Tm (- 600s wall clock) Tj
+/F1 10 Tf 1 0 0 1 52 514 Tm (- 10 tool calls per reply) Tj
+/F1 10 Tf 1 0 0 1 52 500 Tm (- 4,000-char tool output) Tj
+/F1 10 Tf 1 0 0 1 52 486 Tm (- 60s tool timeout) Tj
+/F1 10 Tf 1 0 0 1 52 472 Tm (- 144K-char context budget) Tj
+/F1 10 Tf 1 0 0 1 52 453 Tm (Every violation is logged and bounded.) Tj
+/F2 16 Tf 1 0 0 1 52 416 Tm (Robust model interface) Tj
+/F1 10 Tf 1 0 0 1 52 389 Tm (The parser accepts:) Tj
+/F1 10 Tf 1 0 0 1 52 370 Tm (- native OpenAI tool_calls) Tj
+/F1 10 Tf 1 0 0 1 52 356 Tm (- legacy function_call) Tj
+/F1 10 Tf 1 0 0 1 52 342 Tm (- JSON objects/arrays in text, with or without fences) Tj
+/F1 10 Tf 1 0 0 1 52 328 Tm (- tool/args and name/arguments shapes) Tj
+/F1 10 Tf 1 0 0 1 52 309 Tm (Malformed JSON is a recoverable tool error, not a crash.) Tj
+/F1 10 Tf 1 0 0 1 52 295 Tm (A fake OpenAI-compatible server exercises native, legacy, text, malformed,) Tj
+/F1 10 Tf 1 0 0 1 52 281 Tm (25-call and no-tool scenarios in tests.) Tj
+/F2 16 Tf 1 0 0 1 52 244 Tm (Gate before the model) Tj
+/F3 8 Tf 1 0 0 1 56 217 Tm (| Check | Requirement |) Tj
+/F3 8 Tf 1 0 0 1 56 205 Tm (| Oracle | >= 0.95 |) Tj
+/F3 8 Tf 1 0 0 1 56 193 Tm (| No-op | <= 0.05 |) Tj
+/F3 8 Tf 1 0 0 1 56 181 Tm (| Allow-all | <= 0.001 |) Tj
+/F3 8 Tf 1 0 0 1 56 169 Tm (| Deny-all | <= 0.001 |) Tj
+/F1 10 Tf 1 0 0 1 52 152 Tm (A gate failure stops the run with exit code 2.) Tj
+/F1 10 Tf 1 0 0 1 52 138 Tm (The model is never called on a broken environment.) Tj
+/F2 16 Tf 1 0 0 1 52 101 Tm (Determinism and evidence) Tj
+/F1 10 Tf 1 0 0 1 52 74 Tm (- Seeded world, policy, mutations, examples and matrix.) Tj
+/F1 10 Tf 1 0 0 1 52 60 Tm (- Canonical state hash.) Tj
+/F1 8 Tf 1 0 0 1 524 24 Tm (Page 3 of 4) Tj
+ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 10 0 R >>
+endobj
+12 0 obj
+<< /Length 1840 >>
+stream
+BT
+/F1 10 Tf 1 0 0 1 52 738 Tm (- Verifier cache keyed by \(task_id, seed\).) Tj
+/F1 10 Tf 1 0 0 1 52 724 Tm (- 12 tasks: easy, medium, hard.) Tj
+/F1 10 Tf 1 0 0 1 52 710 Tm (- All 12 passed the four-baseline gate at seed 0.) Tj
+/F1 10 Tf 1 0 0 1 52 696 Tm (- 77 local tests.) Tj
+/F1 10 Tf 1 0 0 1 52 682 Tm (- baseline-results/gate.json and sample trajectories included.) Tj
+/F1 10 Tf 1 0 0 1 52 668 Tm (- Real gpt-6-luna success on med_01 and easy_01; controlled failure logged.) Tj
+/F2 16 Tf 1 0 0 1 52 631 Tm (Current limitations) Tj
+/F1 10 Tf 1 0 0 1 52 604 Tm (- Docker Compose build and one-command run executed locally on 2026-10-25.) Tj
+/F1 10 Tf 1 0 0 1 52 590 Tm (- Real gpt-6-luna calibration: med_01 and easy_01 solved in 5 steps;) Tj
+/F1 10 Tf 1 0 0 1 52 576 Tm (  controlled no-op append failed at 0.0.) Tj
+/F1 10 Tf 1 0 0 1 52 562 Tm (- Hard task generation is slower; standalone seeds took roughly 8-20s.) Tj
+/F1 10 Tf 1 0 0 1 52 548 Tm (- mock/solver is a deterministic oracle-backed demo, not a model baseline.) Tj
+/F1 10 Tf 1 0 0 1 52 529 Tm (Next: broader model sweep across seeds and a short demo video.) Tj
+/F2 16 Tf 1 0 0 1 52 492 Tm (Why Gatekeeper is hard to break) Tj
+/F1 10 Tf 1 0 0 1 52 465 Tm (- Hidden answer key and separate verifier network.) Tj
+/F1 10 Tf 1 0 0 1 52 451 Tm (- Full-matrix scoring, not example matching.) Tj
+/F1 10 Tf 1 0 0 1 52 437 Tm (- Deny-list shape kills allow-all and deny-all.) Tj
+/F1 10 Tf 1 0 0 1 52 423 Tm (- Semantic mutations require understanding, not pattern matching.) Tj
+/F1 10 Tf 1 0 0 1 52 409 Tm (- Strong gate blocks a trivially passable environment.) Tj
+/F1 10 Tf 1 0 0 1 52 395 Tm (- Deterministic replay makes every result auditable.) Tj
+/F1 10 Tf 1 0 0 1 52 376 Tm (Gatekeeper: repair the policy, not the benchmark.) Tj
+/F1 8 Tf 1 0 0 1 524 24 Tm (Page 4 of 4) Tj
+ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 12 0 R >>
+endobj
+14 0 obj
+<< /Title (Gatekeeper Deck) /Producer (Gatekeeper doc renderer) >>
+endobj
+xref
+0 15
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000141 00000 n 
+0000000238 00000 n 
+0000000340 00000 n 
+0000000435 00000 n 
+0000002918 00000 n 
+0000003064 00000 n 
+0000005529 00000 n 
+0000005675 00000 n 
+0000008268 00000 n 
+0000008416 00000 n 
+0000010309 00000 n 
+0000010457 00000 n 
+trailer
+<< /Size 15 /Root 1 0 R /Info 14 0 R >>
+startxref
+10540
+%%EOF

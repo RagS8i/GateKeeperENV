@@ -1,0 +1,23 @@
+# The sandbox: runs the agent-facing environment. No internet access (see docker-compose.yml).
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
+
+RUN useradd --create-home --uid 1000 sandbox
+
+WORKDIR /app
+
+COPY requirements.txt ./
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install -r requirements.txt
+
+COPY common ./common
+COPY sandbox ./sandbox
+
+USER sandbox
+
+EXPOSE 8000
+CMD ["python", "-m", "sandbox.server"]

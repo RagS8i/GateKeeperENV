@@ -10,8 +10,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from gatekeeper.generator import generate_task, load_task_configs
-from gatekeeper.models import Policy, Statement
+from verifier.generator import generate_task, load_task_configs
+from common.models import Policy, Statement
 
 
 def trivial(effect: str) -> Policy:

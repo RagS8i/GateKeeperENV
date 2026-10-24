@@ -7,11 +7,11 @@
 name: gatekeeper
 
 services:
-  env:
+  sandbox:
     build:
       context: .
-      dockerfile: Dockerfile
-    command: ["python", "-m", "gatekeeper.services.env_server"]
+      dockerfile: Dockerfile.sandbox
+    command: ["python", "-m", "sandbox.server"]
     networks: [tools]
     init: true
     read_only: true
@@ -40,8 +40,8 @@ services:
   verifier:
     build:
       context: .
-      dockerfile: Dockerfile
-    command: ["python", "-m", "gatekeeper.services.verifier_server"]
+      dockerfile: Dockerfile.verifier
+    command: ["python", "-m", "verifier.server"]
     networks: [trusted]
     init: true
     read_only: true
@@ -70,10 +70,10 @@ services:
   harness:
     build:
       context: .
-      dockerfile: Dockerfile
-    command: ["python", "-m", "gatekeeper.harness.run"]
+      dockerfile: Dockerfile.harness
+    command: ["python", "-m", "harness.run"]
     depends_on:
-      env:
+      sandbox:
         condition: service_healthy
       verifier:
         condition: service_healthy
@@ -82,7 +82,7 @@ services:
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
     environment:
-      ENV_URL: http://env:8000
+      SANDBOX_URL: http://sandbox:8000
       VERIFIER_URL: http://verifier:8000
       MODEL: ${MODEL:-mock/solver}
       API_KEY: ${API_KEY:-}

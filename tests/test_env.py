@@ -5,8 +5,8 @@ import json
 
 import pytest
 
-from gatekeeper.env_core import Environment
-from gatekeeper.generator import generate_task, load_task_configs
+from sandbox.env import Environment
+from verifier.generator import generate_task, load_task_configs
 
 
 @pytest.fixture(scope="module")

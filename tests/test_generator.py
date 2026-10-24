@@ -4,9 +4,9 @@ import json
 
 import pytest
 
-from gatekeeper.env_core import Environment
-from gatekeeper.generator import generate_task, load_task_configs
-from gatekeeper.models import Policy, Statement
+from sandbox.env import Environment
+from verifier.generator import generate_task, load_task_configs
+from common.models import Policy, Statement
 
 
 pytestmark = pytest.mark.filterwarnings("ignore::DeprecationWarning")
