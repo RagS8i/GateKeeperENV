@@ -1,0 +1,107 @@
+# One command builds everything and runs the whole flow:
+#
+#   docker compose up --build --abort-on-container-exit --exit-code-from harness
+#
+# The harness first checks oracle/no-op/trivial baselines, then runs the model.
+
+name: gatekeeper
+
+services:
+  env:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "-m", "gatekeeper.services.env_server"]
+    networks: [tools]
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 256
+    mem_limit: 512m
+    environment:
+      PORT: "8000"
+      PYTHONDONTWRITEBYTECODE: "1"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')",
+        ]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 3s
+
+  verifier:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "-m", "gatekeeper.services.verifier_server"]
+    networks: [trusted]
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 256
+    mem_limit: 1g
+    environment:
+      PORT: "8000"
+      PYTHONDONTWRITEBYTECODE: "1"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')",
+        ]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 3s
+
+  harness:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "-m", "gatekeeper.harness.run"]
+    depends_on:
+      env:
+        condition: service_healthy
+      verifier:
+        condition: service_healthy
+    networks: [tools, trusted, internet]
+    init: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      ENV_URL: http://env:8000
+      VERIFIER_URL: http://verifier:8000
+      MODEL: ${MODEL:-mock/solver}
+      API_KEY: ${API_KEY:-}
+      BASE_URL: ${BASE_URL:-}
+      MAX_TOKENS: ${MAX_TOKENS:-}
+      TASK_ID: ${TASK_ID:-med_01}
+      SEED: ${SEED:-0}
+      MODE: ${MODE:-full}
+      APPEND_FILE: ${APPEND_FILE:-}
+      MAX_STEPS: ${MAX_STEPS:-40}
+      MAX_SECONDS: ${MAX_SECONDS:-600}
+      LOGS_DIR: /app/logs
+    volumes:
+      - ./logs:/app/logs
+      - ./inputs:/app/inputs:ro
+
+networks:
+  tools:
+    internal: true
+  trusted:
+    internal: true
+  internet: {}

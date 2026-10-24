@@ -1,0 +1,55 @@
+{"event": "baseline_start", "task_id": "med_01", "tier": "medium", "seed": 0, "source": "oracle", "action_count": 21, "ts": "2026-10-23T22:33:30.865949+00:00"}
+{"event": "baseline_action", "source": "oracle", "index": 1, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:30.892351+00:00"}
+{"event": "baseline_action", "source": "oracle", "index": 2, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:30.923164+00:00"}
+{"event": "baseline_action", "source": "oracle", "index": 3, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:30.939721+00:00"}
+{"event": "baseline_action", "source": "oracle", "index": 4, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:30.969047+00:00"}
+{"event": "baseline_action", "source": "oracle", "index": 5, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.000119+00:00"}
+{"event": "baseline_action", "source": "oracle", "index": 6, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.018109+00:00"}
+{"event": "baseline_action", "source": "oracle", "index": 7, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.046529+00:00"}
+{"event": "baseline_action", "source": "oracle", "index": 8, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.078364+00:00"}
+{"event": "baseline_action", "source": "oracle", "index": 9, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.109465+00:00"}
+{"event": "baseline_action", "source": "oracle", "index": 10, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.127652+00:00"}
+{"event": "baseline_action", "source": "oracle", "index": 11, "tool": "put_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.155910+00:00"}
+{"event": "baseline_action", "source": "oracle", "index": 12, "tool": "put_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.187324+00:00"}
+{"event": "baseline_action", "source": "oracle", "index": 13, "tool": "put_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.219369+00:00"}
+{"event": "baseline_action", "source": "oracle", "index": 14, "tool": "put_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.249959+00:00"}
+{"event": "baseline_action", "source": "oracle", "index": 15, "tool": "put_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.281105+00:00"}
+{"event": "baseline_action", "source": "oracle", "index": 16, "tool": "put_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.311861+00:00"}
+{"event": "baseline_action", "source": "oracle", "index": 17, "tool": "put_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.344567+00:00"}
+{"event": "baseline_action", "source": "oracle", "index": 18, "tool": "put_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.375253+00:00"}
+{"event": "baseline_action", "source": "oracle", "index": 19, "tool": "put_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.406890+00:00"}
+{"event": "baseline_action", "source": "oracle", "index": 20, "tool": "put_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.436886+00:00"}
+{"event": "baseline_action", "source": "oracle", "index": 21, "tool": "submit", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.468379+00:00"}
+{"event": "episode_end", "task_id": "med_01", "tier": "medium", "seed": 0, "source": "oracle", "termination": "success", "submitted": true, "score": 1.0, "score_detail": {"task_id": "med_01", "score": 1.0, "false_allows": 0, "false_denies": 0, "weighted_errors": 0, "e_start": 645, "total_requests": 43200}, "steps": 21, "elapsed": 0.763, "state_hash": "62d18b9d", "ts": "2026-10-23T22:33:31.625059+00:00"}
+{"event": "baseline_start", "task_id": "med_01", "tier": "medium", "seed": 0, "source": "noop", "action_count": 1, "ts": "2026-10-23T22:33:31.627815+00:00"}
+{"event": "baseline_action", "source": "noop", "index": 1, "tool": "submit", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.639607+00:00"}
+{"event": "episode_end", "task_id": "med_01", "tier": "medium", "seed": 0, "source": "noop", "termination": "failure", "submitted": true, "score": 0.0, "score_detail": {"task_id": "med_01", "score": 0.0, "false_allows": 191, "false_denies": 72, "weighted_errors": 645, "e_start": 645, "total_requests": 43200}, "steps": 1, "elapsed": 0.167, "state_hash": "073c02ef", "ts": "2026-10-23T22:33:31.792300+00:00"}
+{"event": "baseline_start", "task_id": "med_01", "tier": "medium", "seed": 0, "source": "allow_all", "action_count": 12, "ts": "2026-10-23T22:33:31.795156+00:00"}
+{"event": "baseline_action", "source": "allow_all", "index": 1, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.796568+00:00"}
+{"event": "baseline_action", "source": "allow_all", "index": 2, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.799068+00:00"}
+{"event": "baseline_action", "source": "allow_all", "index": 3, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.812932+00:00"}
+{"event": "baseline_action", "source": "allow_all", "index": 4, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.842617+00:00"}
+{"event": "baseline_action", "source": "allow_all", "index": 5, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.874965+00:00"}
+{"event": "baseline_action", "source": "allow_all", "index": 6, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.905509+00:00"}
+{"event": "baseline_action", "source": "allow_all", "index": 7, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.936283+00:00"}
+{"event": "baseline_action", "source": "allow_all", "index": 8, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.967693+00:00"}
+{"event": "baseline_action", "source": "allow_all", "index": 9, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:31.999031+00:00"}
+{"event": "baseline_action", "source": "allow_all", "index": 10, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:32.030629+00:00"}
+{"event": "baseline_action", "source": "allow_all", "index": 11, "tool": "put_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:32.062013+00:00"}
+{"event": "baseline_action", "source": "allow_all", "index": 12, "tool": "submit", "arguments": null, "content": null, "ts": "2026-10-23T22:33:32.092904+00:00"}
+{"event": "episode_end", "task_id": "med_01", "tier": "medium", "seed": 0, "source": "allow_all", "termination": "failure", "submitted": true, "score": 0.0, "score_detail": {"task_id": "med_01", "score": 0.0, "false_allows": 11519, "false_denies": 0, "weighted_errors": 34557, "e_start": 645, "total_requests": 43200}, "steps": 12, "elapsed": 0.405, "state_hash": "b6d559a8", "ts": "2026-10-23T22:33:32.197240+00:00"}
+{"event": "baseline_start", "task_id": "med_01", "tier": "medium", "seed": 0, "source": "deny_all", "action_count": 12, "ts": "2026-10-23T22:33:32.220563+00:00"}
+{"event": "baseline_action", "source": "deny_all", "index": 1, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:32.234903+00:00"}
+{"event": "baseline_action", "source": "deny_all", "index": 2, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:32.252746+00:00"}
+{"event": "baseline_action", "source": "deny_all", "index": 3, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:32.282532+00:00"}
+{"event": "baseline_action", "source": "deny_all", "index": 4, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:32.313196+00:00"}
+{"event": "baseline_action", "source": "deny_all", "index": 5, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:32.343806+00:00"}
+{"event": "baseline_action", "source": "deny_all", "index": 6, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:32.375019+00:00"}
+{"event": "baseline_action", "source": "deny_all", "index": 7, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:32.406531+00:00"}
+{"event": "baseline_action", "source": "deny_all", "index": 8, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:32.436422+00:00"}
+{"event": "baseline_action", "source": "deny_all", "index": 9, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:32.454077+00:00"}
+{"event": "baseline_action", "source": "deny_all", "index": 10, "tool": "delete_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:32.484336+00:00"}
+{"event": "baseline_action", "source": "deny_all", "index": 11, "tool": "put_policy", "arguments": null, "content": null, "ts": "2026-10-23T22:33:32.516215+00:00"}
+{"event": "baseline_action", "source": "deny_all", "index": 12, "tool": "submit", "arguments": null, "content": null, "ts": "2026-10-23T22:33:32.546252+00:00"}
+{"event": "episode_end", "task_id": "med_01", "tier": "medium", "seed": 0, "source": "deny_all", "termination": "failure", "submitted": true, "score": 0.0, "score_detail": {"task_id": "med_01", "score": 0.0, "false_allows": 0, "false_denies": 31681, "weighted_errors": 31681, "e_start": 645, "total_requests": 43200}, "steps": 12, "elapsed": 0.454, "state_hash": "2349dcd5", "ts": "2026-10-23T22:33:32.651698+00:00"}
+{"event": "gate_task", "task_id": "med_01", "tier": "medium", "seed": 0, "scores": {"oracle": 1.0, "noop": 0.0, "allow_all": 0.0, "deny_all": 0.0}, "passed": true, "elapsed": 1.789, "ts": "2026-10-23T22:33:32.651789+00:00"}

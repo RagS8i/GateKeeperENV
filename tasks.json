@@ -1,0 +1,137 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "task_id": "easy_01",
+      "tier": "easy",
+      "seed": 10101,
+      "users": 10,
+      "groups": 3,
+      "resources": 30,
+      "statements": 6,
+      "mutation_types": ["widen_wildcard"],
+      "visible_examples": 5
+    },
+    {
+      "task_id": "easy_02",
+      "tier": "easy",
+      "seed": 10202,
+      "users": 12,
+      "groups": 4,
+      "resources": 35,
+      "statements": 7,
+      "mutation_types": ["remove_condition"],
+      "visible_examples": 5
+    },
+    {
+      "task_id": "easy_03",
+      "tier": "easy",
+      "seed": 10303,
+      "users": 14,
+      "groups": 4,
+      "resources": 40,
+      "statements": 7,
+      "mutation_types": ["flip_effect"],
+      "visible_examples": 6
+    },
+    {
+      "task_id": "easy_04",
+      "tier": "easy",
+      "seed": 10404,
+      "users": 16,
+      "groups": 5,
+      "resources": 45,
+      "statements": 8,
+      "mutation_types": ["drop_statement"],
+      "visible_examples": 6
+    },
+    {
+      "task_id": "med_01",
+      "tier": "medium",
+      "seed": 20101,
+      "users": 30,
+      "groups": 7,
+      "resources": 60,
+      "statements": 10,
+      "mutation_types": ["remove_condition", "flip_effect"],
+      "visible_examples": 6
+    },
+    {
+      "task_id": "med_02",
+      "tier": "medium",
+      "seed": 20202,
+      "users": 35,
+      "groups": 8,
+      "resources": 70,
+      "statements": 12,
+      "mutation_types": ["widen_wildcard", "remove_deny"],
+      "visible_examples": 7
+    },
+    {
+      "task_id": "med_03",
+      "tier": "medium",
+      "seed": 20303,
+      "users": 40,
+      "groups": 9,
+      "resources": 80,
+      "statements": 13,
+      "mutation_types": ["drop_statement", "change_group", "flip_effect"],
+      "visible_examples": 7
+    },
+    {
+      "task_id": "med_04",
+      "tier": "medium",
+      "seed": 20404,
+      "users": 45,
+      "groups": 10,
+      "resources": 90,
+      "statements": 14,
+      "mutation_types": ["widen_wildcard", "remove_condition", "remove_deny"],
+      "visible_examples": 8
+    },
+    {
+      "task_id": "hard_01",
+      "tier": "hard",
+      "seed": 30101,
+      "users": 90,
+      "groups": 15,
+      "resources": 130,
+      "statements": 18,
+      "mutation_types": ["drop_statement", "widen_wildcard", "remove_condition", "remove_deny"],
+      "visible_examples": 8
+    },
+    {
+      "task_id": "hard_02",
+      "tier": "hard",
+      "seed": 30202,
+      "users": 95,
+      "groups": 16,
+      "resources": 140,
+      "statements": 19,
+      "mutation_types": ["change_group", "flip_effect", "widen_wildcard", "drop_statement"],
+      "visible_examples": 8
+    },
+    {
+      "task_id": "hard_03",
+      "tier": "hard",
+      "seed": 30303,
+      "users": 100,
+      "groups": 17,
+      "resources": 150,
+      "statements": 20,
+      "mutation_types": ["remove_condition", "remove_deny", "change_group", "flip_effect"],
+      "visible_examples": 9
+    },
+    {
+      "task_id": "hard_04",
+      "tier": "hard",
+      "seed": 30404,
+      "users": 105,
+      "groups": 18,
+      "resources": 160,
+      "statements": 22,
+      "mutation_types": ["drop_statement", "widen_wildcard", "remove_condition", "remove_deny", "change_group"],
+      "visible_examples": 9
+    }
+  ]
+}
