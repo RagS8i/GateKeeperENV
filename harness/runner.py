@@ -17,6 +17,9 @@ from .logging import JsonlWriter, clip, print_line, print_step, utc_now
 from .parser import ToolCall
 from .tools import TOOL_NAMES, TOOL_SPECS
 
+SUCCESS_SCORE = 0.95
+UNSUBMITTED_REWARD_CAP = 0.94
+
 SYSTEM_PROMPT = """You are Gatekeeper, an autonomous access-policy repair agent inside a simulated company.
 
 You are given a broken JSON access policy, a directory of users/groups/resources, and natural-language access requirements. Your job is to edit the policy so it matches the requirements exactly, then call submit.
@@ -58,6 +61,14 @@ def _reward_from_shadow(shadow: dict[str, Any] | None) -> dict[str, Any]:
     reward["total"] = shadow.get("score")
     reward["sampled"] = True
     return reward
+
+
+def _final_reward_total(
+    score: float | None, submitted: bool
+) -> float | None:
+    if score is None:
+        return None
+    return score if submitted else min(score, UNSUBMITTED_REWARD_CAP)
 
 
 def _step_record(
@@ -652,14 +663,14 @@ def run_episode(
         final_termination = "crash"
     elif termination in {"crash", "time_cap", "step_cap"}:
         final_termination = termination
-    elif submitted and final_score is not None and final_score >= 0.95:
+    elif submitted and final_score is not None and final_score >= SUCCESS_SCORE:
         final_termination = "success"
     else:
         final_termination = "failure"
 
     elapsed = time.monotonic() - started
     reward = dict(score_result or {})
-    reward["total"] = final_score
+    reward["total"] = _final_reward_total(final_score, submitted)
     result = {
         "event": "episode_end",
         "agent": "model",
@@ -771,7 +782,9 @@ def run_scripted(
     )
     elapsed = time.monotonic() - started
     reward = dict(score_result)
-    reward["total"] = score_result["score"]
+    reward["total"] = _final_reward_total(
+        float(score_result["score"]), submitted
+    )
     result = {
         "event": "episode_end",
         "agent": source,
@@ -780,7 +793,11 @@ def run_scripted(
         "tier": tier,
         "seed": seed,
         "source": source,
-        "termination": "success" if score_result["score"] >= 0.95 else "failure",
+        "termination": (
+            "success"
+            if submitted and score_result["score"] >= SUCCESS_SCORE
+            else "failure"
+        ),
         "submitted": submitted,
         "score": score_result["score"],
         "reward": reward,

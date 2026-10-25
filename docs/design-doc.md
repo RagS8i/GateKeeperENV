@@ -49,7 +49,7 @@ that emit JSON in text. No model-specific prompting or fine-tuning is required.
 | Malformed or hostile tool calls | JSON object validation, Pydantic models, reference validation, 4K output cap, 10 calls/reply, 60s tool timeout. |
 | Sandbox reaches the internet or verifier | `sandbox` is on an internal network only; `verifier` is on a separate internal network; only `harness` has egress. |
 | Resource exhaustion | `pids_limit`, `mem_limit`, read-only filesystems for sandbox/verifier, `cap_drop: ALL`, `no-new-privileges`, step/time caps. |
-| Answer leakage through logs | Gate logs contain scripted baseline actions only in the trusted harness log; the sandbox has no log mount or verifier route. Episode logs contain model-visible messages, tool output and state hashes, never the hidden matrix or answer key. |
+| Answer leakage through logs | The sandbox has no log mount or verifier route. Gate logs contain scripted oracle and baseline actions in the trusted harness log; they can reconstruct the correct policy and are kept as audit evidence, not mounted into the sandbox. Episode logs contain model-visible messages, tool output and state hashes. |
 | Non-determinism | All generation and sampling is seeded; canonical state hashes. |
 
 ## 4. Architecture
@@ -261,6 +261,14 @@ The asymmetric weights encode the security preference: over-permission is
 worse than over-restriction. `E_start` normalizes difficulty: a task with more
 starting errors is not automatically easier or harder.
 
+### Success and reward
+
+A run succeeds only when the agent calls `submit` and the submitted policy scores
+at least 0.95. The verifier's raw score is still reported in `score` and
+`score_detail`, but `reward.total` is capped at 0.94 when the agent never submits.
+This keeps the success label and the reward consistent: a failed run cannot
+report a full reward.
+
 ### Shadow score
 
 After each model turn, the harness asks the verifier to score the current policy
@@ -367,7 +375,8 @@ has `timestamp`, `agent`, `task`, `step`, `seed`, `model_input`,
 `reward`, `tokens` and `latency_ms`. `state` is a hash plus statement count, not
 a full policy snapshot. `reward` contains the sampled shadow score and its
 components; the final `episode_end` record contains the full verifier result
-with a `total` reward alias. `gate.jsonl` uses the same canonical shape for
+with a `total` reward alias that is capped below 0.95 when the agent did not
+submit. `gate.jsonl` uses the same canonical shape for
 oracle, no-op, allow-all and deny-all actions, with `agent` set to the baseline
 name. These records are written by the trusted harness and are not mounted into
 the sandbox.
@@ -387,7 +396,7 @@ the sandbox.
 
 ## 12. Testing and evidence
 
-The repository includes 77 tests:
+The repository includes 79 tests:
 
 - evaluator unit and differential tests;
 - models/canonicalization tests;

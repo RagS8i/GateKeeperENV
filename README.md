@@ -65,9 +65,11 @@ be added without rebuilding by putting a UTF-8 file in `inputs/` and setting
 ## Why this environment is hard to game
 
 - **Hidden answer key.** The correct policy, mutation list, decision matrix and
-  starting error count live only in the verifier. The sandbox receives a
-  sanitized bundle: world, broken policy, requirements, visible examples, task
-  metadata and the initial state hash.
+  starting error count are held by the verifier and are never sent to the
+  sandbox. The sandbox receives a sanitized bundle: world, broken policy,
+  requirements, visible examples, task metadata and the initial state hash.
+  Trusted-host gate logs record scripted oracle actions for audit, so those logs
+  can reconstruct the correct policy; they are not mounted into the sandbox.
 - **Exhaustive scoring.** A submission is evaluated on the full Cartesian
   product of users × actions × resources × context variants, not on the handful
   of visible examples.
@@ -153,8 +155,10 @@ dangerous failure for access control. The score is clipped at zero, so a
 candidate can never receive credit for making the policy worse.
 
 During the episode, the harness also requests a **sampled shadow score** after
-each model turn. It is a cheap progress signal for logs and debugging; only the
-final full score decides success.
+each model turn. It is a cheap progress signal for logs and debugging; the final
+full-matrix score is reported as the reward, but a run only succeeds if the agent
+calls `submit` and that submitted policy scores at least 0.95. A run that never
+submits is not a success, and its reward is capped below 0.95.
 
 ## Tools
 
@@ -195,7 +199,8 @@ Policy semantics:
 The harness trims old assistant/tool units to stay inside the context budget,
 truncates tool output, rejects unknown tools, and marks unrun calls with an
 explicit error. A submission that does not reach 0.95 is reported as `failure`,
-not `success`.
+not `success`. A run that never calls `submit` is also not a success, and its
+reward is capped below 0.95 even if the current policy would score 1.0.
 
 ## Outputs
 
@@ -218,8 +223,9 @@ per step and the full verifier result at episode end.
 
 Gate logs include the scripted baseline actions for audit. They are written by
 the trusted harness and are never exposed to the sandbox. Episode logs contain
-model-visible messages, tool results and candidate state hashes; the hidden
-matrix and answer key are never written.
+model-visible messages, tool results and candidate state hashes. The sandbox
+never receives the hidden matrix, mutations or answer key; the trusted-host gate
+logs can reconstruct the oracle policy and are included as audit evidence.
 
 ## Local development
 
@@ -229,7 +235,7 @@ python -m venv .venv
 .venv/bin/python -m pytest -q
 ```
 
-Current suite: 77 tests covering the evaluator, generator, verifier, sandbox,
+Current suite: 79 tests covering the evaluator, generator, verifier, sandbox,
 seeded `Env.reset`, canonical telemetry, HTTP services, parser, append contract,
 model loop, limits, fake model, gate and one-command harness flow.
 

@@ -36,6 +36,21 @@ class SleepingClient:
         )
 
 
+class OracleNoSubmitClient(MockClient):
+    def start(self, task_context):
+        super().start(task_context)
+        self.actions = [
+            action for action in self.actions if action["tool"] != "submit"
+        ]
+
+    def complete(self, messages, tools, *, timeout):
+        if self.cursor >= len(self.actions):
+            return parse_assistant_message(
+                {"role": "assistant", "content": "done"}
+            )
+        return super().complete(messages, tools, timeout=timeout)
+
+
 def _env(service_urls, task_id="easy_01"):
     return Env(
         EnvClient(service_urls.env),
@@ -185,11 +200,75 @@ def test_parser_native_legacy_and_text():
     assert error is not None
 
 
+def test_parser_normalizes_list_content():
+    reply = parse_assistant_message(
+        {
+            "role": "assistant",
+            "content": [
+                {"type": "text", "text": "I will inspect."},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": "https://example.invalid/x.png"},
+                },
+                {
+                    "type": "text",
+                    "text": '{"tool":"get_requirements","args":{}}',
+                },
+            ],
+        }
+    )
+    assert reply.text == (
+        'I will inspect.\n{"tool":"get_requirements","args":{}}'
+    )
+    assert [call.name for call in reply.calls] == ["get_requirements"]
+    assert reply.assistant_message["content"] == reply.text
+
+    plain = parse_assistant_message(
+        {
+            "role": "assistant",
+            "content": ["first", {"type": "text", "text": "second"}],
+        }
+    )
+    assert plain.text == "first\nsecond"
+
+    wrapped = parse_assistant_message(
+        {
+            "role": "assistant",
+            "content": {"type": "text", "text": "wrapped"},
+        }
+    )
+    assert wrapped.text == "wrapped"
+
+    direct = parse_text_tool_calls(
+        [{"type": "text", "text": '{"tool":"submit","args":{}}'}]
+    )
+    assert [call.name for call in direct] == ["submit"]
+
+
 def test_mock_solver_succeeds(service_urls):
     result = _run(service_urls, MockClient("solver"), "mock/solver", oracle=True)
     assert result["termination"] == "success"
     assert result["score"] == 1.0
     assert result["steps"] <= 8
+
+
+def test_correct_policy_without_submit_is_failure_with_capped_reward(
+    service_urls,
+):
+    env = _env(service_urls)
+    actions = env.verifier.oracle("easy_01", 0)["actions"]
+    actions = [action for action in actions if action["tool"] != "submit"]
+    result = _run(
+        service_urls,
+        OracleNoSubmitClient("solver"),
+        "mock/solver",
+        oracle=True,
+        limits=Limits(max_steps=len(actions)),
+    )
+    assert result["termination"] == "step_cap"
+    assert result["submitted"] is False
+    assert result["score"] == 1.0
+    assert result["reward"]["total"] == 0.94
 
 
 def test_idle_submit_is_a_failure(service_urls):

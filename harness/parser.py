@@ -37,6 +37,47 @@ def _to_argument_string(value: Any) -> str:
     return json.dumps(value)
 
 
+def _content_to_text(content: Any) -> str:
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content
+    text = getattr(content, "text", None)
+    if isinstance(text, str):
+        return text
+    if hasattr(content, "model_dump"):
+        try:
+            return _content_to_text(content.model_dump())
+        except Exception:
+            pass
+    if isinstance(content, (list, tuple)):
+        parts = [
+            part
+            for part in (_content_to_text(item) for item in content)
+            if part
+        ]
+        return "\n".join(parts)
+    if isinstance(content, dict):
+        block_type = content.get("type")
+        if block_type not in (None, "text", "input_text", "output_text"):
+            return ""
+        for key in ("text", "content", "value"):
+            if key not in content:
+                continue
+            value = content[key]
+            if isinstance(value, str):
+                if value:
+                    return value
+            elif isinstance(value, (dict, list, tuple)):
+                text = _content_to_text(value)
+                if text:
+                    return text
+            elif value is not None:
+                return str(value)
+        return ""
+    return str(content)
+
+
 def parse_arguments(raw: Any) -> tuple[dict[str, Any] | None, str, str | None]:
     text = _to_argument_string(raw).strip()
     if not text:
@@ -156,7 +197,8 @@ def _looks_like_call(value: dict[str, Any]) -> bool:
     return isinstance(name, str) and bool(name.strip())
 
 
-def parse_text_tool_calls(text: str) -> list[ToolCall]:
+def parse_text_tool_calls(text: Any) -> list[ToolCall]:
+    text = _content_to_text(text)
     if not text or not text.strip():
         return []
 
@@ -184,7 +226,7 @@ def parse_assistant_message(message: Any) -> Reply:
     text = getattr(message, "content", None)
     if text is None and isinstance(message, dict):
         text = message.get("content")
-    text = text or ""
+    text = _content_to_text(text)
 
     raw_calls = getattr(message, "tool_calls", None)
     if raw_calls is None and isinstance(message, dict):
