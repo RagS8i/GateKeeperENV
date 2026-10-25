@@ -71,7 +71,7 @@ _TOOLS: list[dict[str, Any]] = [
                     "context": {
                         "type": "object",
                         "additionalProperties": {"type": "string"},
-                        "description": "Request context, for example {network, mfa}.",
+                        "description": "Request context, for example {network, mfa, device}.",
                     },
                 },
                 "required": ["principal", "action", "resource"],

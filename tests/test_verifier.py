@@ -7,7 +7,7 @@ from verifier.core import TaskService
 def test_verifier_lists_all_tasks(configs):
     service = TaskService()
     listing = service.list_tasks()
-    assert listing["count"] == 12
+    assert listing["count"] == 20
     assert {task["task_id"] for task in listing["tasks"]} == {
         config.task_id for config in configs
     }

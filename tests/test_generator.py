@@ -7,19 +7,31 @@ import pytest
 from sandbox.env import Environment
 from verifier.generator import generate_task, load_task_configs
 from common.models import Policy, Statement
+from common.tasks import MUTATION_KINDS
 
 
 pytestmark = pytest.mark.filterwarnings("ignore::DeprecationWarning")
 
 
 def test_task_configs_are_complete(configs):
-    assert len(configs) == 12
-    assert len({config.task_id for config in configs}) == 12
+    assert len(configs) == 20
+    assert len({config.task_id for config in configs}) == 20
     assert {config.tier for config in configs} == {"easy", "medium", "hard"}
+    assert sum(config.tier == "medium" for config in configs) == 8
+    assert sum(config.tier == "hard" for config in configs) == 8
     for config in configs:
         assert config.statements >= len(config.mutation_types) + 2
         assert config.users > 0 and config.resources > 0
         assert config.contexts
+
+    hard = [config for config in configs if config.tier == "hard"]
+    assert all(set(config.mutation_types) == set(MUTATION_KINDS) for config in hard)
+    assert all(
+        len(config.mutation_types) >= 8 and config.statements >= 32
+        for config in hard
+    )
+    assert all(len(config.contexts) == 11 for config in hard)
+    assert max(len(config.contexts) for config in configs if config.tier == "medium") == 6
 
 
 @pytest.mark.parametrize("task_id", ["easy_01", "med_01", "hard_01"])
@@ -71,6 +83,8 @@ def test_generated_task_invariants(configs, task_id):
     assert task.e_start >= 20
     assert len(task.mutations) == len(config.mutation_types)
     assert all(record.sample_impact > 0 for record in task.mutations)
+    if task_id == "hard_01":
+        assert {record.kind for record in task.mutations} == set(MUTATION_KINDS)
     assert task.sample_indices
     assert len(task.reference_sample) == len(task.sample_indices)
 

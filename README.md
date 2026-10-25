@@ -73,9 +73,10 @@ be added without rebuilding by putting a UTF-8 file in `inputs/` and setting
 - **Exhaustive scoring.** A submission is evaluated on the full Cartesian
   product of users × actions × resources × context variants, not on the handful
   of visible examples.
-- **Semantic mutations.** Tasks use six mutation classes: dropped statement,
-  widened wildcard, removed condition, removed deny, changed group membership
-  and flipped effect. The broken policy is not a random edit.
+- **Semantic mutations.** Tasks use eight mutation classes: dropped statement,
+  widened wildcard, removed condition, removed deny, changed group membership,
+  flipped effect, removed exception and swapped condition value. The broken
+  policy is not a random edit.
 - **Deny-list baseline.** Each correct policy retains an allow-all baseline and
   a protected restricted-scope deny. This guarantees both allow-all and
   deny-all score approximately zero while still forcing real reasoning.
@@ -128,16 +129,17 @@ the public `reset(seed)` / `step(tool, args)` / `score()` interface.
 
 ## Task set
 
-`tasks.json` contains twelve tasks:
+`tasks.json` contains twenty tasks:
 
-| Tier | Tasks | Users | Resources | Mutation classes |
-| --- | --- | --- | --- | --- |
-| easy | `easy_01`-`easy_04` | 10-16 | 30-45 | 1 |
-| medium | `med_01`-`med_04` | 30-45 | 60-90 | 2-3 |
-| hard | `hard_01`-`hard_04` | 90-105 | 130-160 | 4-5 |
+| Tier | Tasks | Users | Resources | Statements | Mutation instances |
+| --- | --- | --- | --- | --- | --- |
+| easy | `easy_01`-`easy_04` | 10-16 | 30-45 | 6-8 | 1 |
+| medium | `med_01`-`med_08` | 30-65 | 60-130 | 10-20 | 2-5 |
+| hard | `hard_01`-`hard_08` | 120-145 | 180-200 | 32-40 | 8-11 |
 
-Hard tasks use more statements, nested groups, multiple context keys and
-larger matrices. The demo task is `med_01`.
+Hard tasks use all eight mutation classes, deeper nested groups, three context
+dimensions (`network`, `mfa`, `device`), overlapping resource tags and matrices
+up to 1,276,000 hidden decisions. The demo task is `med_01`.
 
 ## Scoring
 
@@ -275,7 +277,7 @@ common/               shared models, evaluator, request, HTTP helpers, task conf
 sandbox/              agent-facing environment state machine + HTTP server
 verifier/             generator, hidden matrix, requirements, scoring + HTTP server
 harness/              model loop, gate, Env facade, clients, parser, logging
-tasks.json            12 task configurations
+tasks.json            20 task configurations
 check_model.py        one-message model connectivity check
 inputs/               optional extra system-prompt text (mounted read-only)
 tests/                unit, integration and end-to-end tests
@@ -292,15 +294,15 @@ Dockerfile.harness    harness image
 ## Evidence and artifacts
 
 - `baseline-results/gate.json` — oracle/no-op/allow-all/deny-all gate for all
-  twelve tasks at seed 0.
+  twenty tasks at seed 0.
 - `sample-trajectories/` — offline solver success/failure traces and real
   `gpt-6-luna` success/failure traces.
 - `test-run-logs/` — gate, pytest, generation-soak and three real model-run logs
   from local verification.
 - `docs/design-doc.md` and `docs/design-doc.pdf` — full design and threat model.
 - `docs/deck.md` and `docs/deck.pdf` — short presentation deck.
-- Clean `--no-cache` three-image build completed in 21.8s locally; the Docker
-  all-task gate completed in 15.7s.
+- Clean `--no-cache` three-image build completed in 21.8s locally; the local
+  in-process twenty-task gate completed in 110.1s at seed 0.
 
 ## Real-model calibration
 
@@ -323,8 +325,11 @@ log. Full logs are in `test-run-logs/`.
 - The real-model evidence is a smoke calibration, not a statistically
   meaningful sweep across models, temperatures and seeds.
 - Hard tasks are slower to generate because the generator scores candidate
-  mutations against the sampled matrix. Standalone hard-task generation took
-  roughly 8-20 seconds locally; the all-task gate took about 15.7 seconds.
+  mutations against the sampled matrix. Standalone hard-task generation takes
+  roughly 4-8 seconds at seed 0 and up to about 30 seconds for other seeds; the
+  all-task baseline gate takes about 110.1 seconds because it exercises oracle,
+  no-op, allow-all and deny-all on every task, including the 1.28M-decision hard
+  tasks.
 - The offline `mock/solver` consumes oracle actions from the harness. It is a
   deterministic gate/demo aid, not a model baseline.
 - `GATE_BUDGET_SECONDS = 120` currently emits a warning only. `MODE=all` uses
@@ -343,7 +348,7 @@ log. Full logs are in `test-run-logs/`.
 ## Reproducing the gate
 
 ```bash
-# All twelve tasks, no model:
+# All twenty tasks, no model:
 MODE=baselines SEED=0 docker compose up --build --abort-on-container-exit --exit-code-from harness
 ```
 

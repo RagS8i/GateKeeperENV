@@ -36,7 +36,7 @@ Selector syntax:
 - Principal: "user:<id>", "group:<id>", or "*".
 - Resource: "resource:<id>", "tag:<tag>", or "*".
 - Action: "read", "write", "delete", "share", or "*".
-- Context: string keys such as "network" and "mfa"; a key may be absent.
+- Context: string keys such as "network", "mfa" and "device"; a key may be absent.
 
 Rules:
 - Do not execute shell commands; you have no shell. Use only the provided tools.

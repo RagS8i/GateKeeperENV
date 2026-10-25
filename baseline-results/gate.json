@@ -1,6 +1,6 @@
 {
-  "run_id": "20261024T221121483645Z",
-  "timestamp": "2026-10-24T22:11:37.192598+00:00",
+  "run_id": "baseline-results",
+  "timestamp": "2026-10-25T04:38:40.526239+00:00",
   "thresholds": {
     "oracle_min": 0.95,
     "noop_max": 0.05,
@@ -27,7 +27,7 @@
         "deny_all": 0.0
       },
       "passed": true,
-      "elapsed": 0.181
+      "elapsed": 0.224
     },
     {
       "task": "easy_02",
@@ -48,7 +48,7 @@
         "deny_all": 0.0
       },
       "passed": true,
-      "elapsed": 0.212
+      "elapsed": 0.246
     },
     {
       "task": "easy_03",
@@ -69,7 +69,7 @@
         "deny_all": 0.0
       },
       "passed": true,
-      "elapsed": 0.273
+      "elapsed": 0.25
     },
     {
       "task": "easy_04",
@@ -90,7 +90,7 @@
         "deny_all": 0.0
       },
       "passed": true,
-      "elapsed": 0.234
+      "elapsed": 0.267
     },
     {
       "task": "med_01",
@@ -111,7 +111,7 @@
         "deny_all": 0.0
       },
       "passed": true,
-      "elapsed": 0.415
+      "elapsed": 0.437
     },
     {
       "task": "med_02",
@@ -132,7 +132,7 @@
         "deny_all": 0.0
       },
       "passed": true,
-      "elapsed": 0.467
+      "elapsed": 0.529
     },
     {
       "task": "med_03",
@@ -153,7 +153,7 @@
         "deny_all": 0.0
       },
       "passed": true,
-      "elapsed": 0.594
+      "elapsed": 0.615
     },
     {
       "task": "med_04",
@@ -174,7 +174,91 @@
         "deny_all": 0.0
       },
       "passed": true,
-      "elapsed": 0.645
+      "elapsed": 0.726
+    },
+    {
+      "task": "med_05",
+      "task_id": "med_05",
+      "difficulty": "medium",
+      "tier": "medium",
+      "seed": 0,
+      "oracle": 1.0,
+      "noop": 0.0,
+      "allow_all": 0.0,
+      "deny_all": 0.0,
+      "oracle_ok": true,
+      "noop_ok": true,
+      "scores": {
+        "oracle": 1.0,
+        "noop": 0.0,
+        "allow_all": 0.0,
+        "deny_all": 0.0
+      },
+      "passed": true,
+      "elapsed": 0.885
+    },
+    {
+      "task": "med_06",
+      "task_id": "med_06",
+      "difficulty": "medium",
+      "tier": "medium",
+      "seed": 0,
+      "oracle": 1.0,
+      "noop": 0.0,
+      "allow_all": 0.0,
+      "deny_all": 0.0,
+      "oracle_ok": true,
+      "noop_ok": true,
+      "scores": {
+        "oracle": 1.0,
+        "noop": 0.0,
+        "allow_all": 0.0,
+        "deny_all": 0.0
+      },
+      "passed": true,
+      "elapsed": 1.027
+    },
+    {
+      "task": "med_07",
+      "task_id": "med_07",
+      "difficulty": "medium",
+      "tier": "medium",
+      "seed": 0,
+      "oracle": 1.0,
+      "noop": 0.0,
+      "allow_all": 0.0,
+      "deny_all": 0.0,
+      "oracle_ok": true,
+      "noop_ok": true,
+      "scores": {
+        "oracle": 1.0,
+        "noop": 0.0,
+        "allow_all": 0.0,
+        "deny_all": 0.0
+      },
+      "passed": true,
+      "elapsed": 1.118
+    },
+    {
+      "task": "med_08",
+      "task_id": "med_08",
+      "difficulty": "medium",
+      "tier": "medium",
+      "seed": 0,
+      "oracle": 1.0,
+      "noop": 0.0,
+      "allow_all": 0.0,
+      "deny_all": 0.0,
+      "oracle_ok": true,
+      "noop_ok": true,
+      "scores": {
+        "oracle": 1.0,
+        "noop": 0.0,
+        "allow_all": 0.0,
+        "deny_all": 0.0
+      },
+      "passed": true,
+      "elapsed": 1.334
     },
     {
       "task": "hard_01",
@@ -195,7 +279,7 @@
         "deny_all": 0.0
       },
       "passed": true,
-      "elapsed": 1.544
+      "elapsed": 5.764
     },
     {
       "task": "hard_02",
@@ -216,7 +300,7 @@
         "deny_all": 0.0
       },
       "passed": true,
-      "elapsed": 1.765
+      "elapsed": 6.211
     },
     {
       "task": "hard_03",
@@ -237,7 +321,7 @@
         "deny_all": 0.0
       },
       "passed": true,
-      "elapsed": 2.017
+      "elapsed": 6.679
     },
     {
       "task": "hard_04",
@@ -258,11 +342,95 @@
         "deny_all": 0.0
       },
       "passed": true,
-      "elapsed": 2.288
+      "elapsed": 6.736
+    },
+    {
+      "task": "hard_05",
+      "task_id": "hard_05",
+      "difficulty": "hard",
+      "tier": "hard",
+      "seed": 0,
+      "oracle": 1.0,
+      "noop": 0.0,
+      "allow_all": 0.0,
+      "deny_all": 0.0,
+      "oracle_ok": true,
+      "noop_ok": true,
+      "scores": {
+        "oracle": 1.0,
+        "noop": 0.0,
+        "allow_all": 0.0,
+        "deny_all": 0.0
+      },
+      "passed": true,
+      "elapsed": 7.055
+    },
+    {
+      "task": "hard_06",
+      "task_id": "hard_06",
+      "difficulty": "hard",
+      "tier": "hard",
+      "seed": 0,
+      "oracle": 1.0,
+      "noop": 0.0,
+      "allow_all": 0.0,
+      "deny_all": 0.0,
+      "oracle_ok": true,
+      "noop_ok": true,
+      "scores": {
+        "oracle": 1.0,
+        "noop": 0.0,
+        "allow_all": 0.0,
+        "deny_all": 0.0
+      },
+      "passed": true,
+      "elapsed": 7.706
+    },
+    {
+      "task": "hard_07",
+      "task_id": "hard_07",
+      "difficulty": "hard",
+      "tier": "hard",
+      "seed": 0,
+      "oracle": 1.0,
+      "noop": 0.0,
+      "allow_all": 0.0,
+      "deny_all": 0.0,
+      "oracle_ok": true,
+      "noop_ok": true,
+      "scores": {
+        "oracle": 1.0,
+        "noop": 0.0,
+        "allow_all": 0.0,
+        "deny_all": 0.0
+      },
+      "passed": true,
+      "elapsed": 8.314
+    },
+    {
+      "task": "hard_08",
+      "task_id": "hard_08",
+      "difficulty": "hard",
+      "tier": "hard",
+      "seed": 0,
+      "oracle": 1.0,
+      "noop": 0.0,
+      "allow_all": 0.0,
+      "deny_all": 0.0,
+      "oracle_ok": true,
+      "noop_ok": true,
+      "scores": {
+        "oracle": 1.0,
+        "noop": 0.0,
+        "allow_all": 0.0,
+        "deny_all": 0.0
+      },
+      "passed": true,
+      "elapsed": 8.505
     }
   ],
   "passed": true,
-  "task_count": 12,
+  "task_count": 20,
   "seed": 0,
-  "gate_seconds": 15.7
+  "gate_seconds": 110.11
 }

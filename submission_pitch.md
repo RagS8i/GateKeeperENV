@@ -29,13 +29,13 @@ The benchmark is model-agnostic. Any OpenAI-compatible chat-completions model ca
 ### What the submission demonstrates
 
 - A one-command Docker Compose contract with separate environment, verifier, and harness services.
-- Twelve deterministic tasks across easy, medium, and hard tiers.
+- Twenty deterministic tasks across easy, medium, and hard tiers.
 - A hidden verifier that keeps the correct policy, mutation records, reference decisions, and full matrix out of the environment.
 - A strict tool surface with schema validation, bounded outputs, bounded turns, and no shell access.
 - A pre-flight baseline gate that rejects trivial or degenerate environments before the model is called.
 - A complete offline execution trace in which a control agent repairs `med_01` in three turns for a score of `1.0`, plus a negative control that submits the broken policy for `0.0`.
 
-The shipped suite evaluates **1,906,400 request/context decisions** across twelve tasks. The demo task, `med_01`, alone contains **43,200 hidden decisions**. The largest hard task contains **470,400**. This is a 15,000-node-scale benchmark surface and substantially larger in the upper tiers, not a lookup table of a few examples.
+The shipped suite evaluates **9,935,704 request/context decisions** across twenty tasks. The demo task, `med_01`, alone contains **43,200 hidden decisions**. The largest hard task contains **1,276,000**. This is a multi-million-decision benchmark surface and substantially larger in the upper tiers, not a lookup table of a few examples.
 
 ---
 
@@ -69,7 +69,7 @@ This distinction is why Gatekeeper is not simple data retrieval. The agent can r
 
 These rules turn local edits into global effects. Removing one condition changes an entire context slice. Flipping one effect changes every request that reaches that statement. Widening one resource selector can silently grant access to resources the agent never inspected. The model must reason about the interaction of all rules, not patch text in isolation.
 
-Nested groups amplify this. In the hard tier, `hard_02` has ten of its sixteen groups containing nested members. A user's effective groups are the transitive closure of direct memberships and parent groups. An agent that inspects only direct membership can produce a policy that looks correct in the directory view but misclassifies many users in the matrix.
+Nested groups amplify this. In the hard tier, `hard_02` has fifteen of its twenty-three groups containing nested members, and `hard_08` has twenty-one of twenty-eight. A user's effective groups are the transitive closure of direct memberships and parent groups. An agent that inspects only direct membership can produce a policy that looks correct in the directory view but misclassifies many users in the matrix.
 
 ### 3. The hidden matrix is large and only sparsely observable
 
@@ -77,19 +77,19 @@ The matrix is the Cartesian product of users, four actions, resources, and tier-
 
 - Easy: 5 context variants.
 - Medium: 6 context variants.
-- Hard: 7 context variants, including `network` values `corp`, `vpn`, and `guest`, and `mfa` values `true` and `false`.
+- Hard: 11 context variants over `network`, `mfa`, and `device`, including compound variants such as `{network: corp, mfa: true, device: managed}`.
 
 Exact shipped dimensions:
 
-| Tier | Tasks | Users | Resources | Contexts | Mutation classes | Hidden decision nodes |
+| Tier | Tasks | Users | Resources | Contexts | Mutation instances | Hidden decision nodes |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Easy | 4 | 10-16 | 30-45 | 5 | 1 | 6,000-14,400 |
-| Medium | 4 | 30-45 | 60-90 | 6 | 2-3 | 43,200-97,200 |
-| Hard | 4 | 90-105 | 130-160 | 7 | 4-5 | 327,600-470,400 |
+| Medium | 8 | 30-65 | 60-130 | 6 | 2-5 | 43,200-202,800 |
+| Hard | 8 | 120-145 | 180-200 | 11 | 8-11 | 950,400-1,276,000 |
 
-The demo `med_01` has 30 users, 7 groups, 60 resources, 4 actions, and 6 contexts, for **43,200 decisions**. `hard_04` has 105 users, 18 groups, 160 resources, 4 actions, and 7 contexts, for **470,400 decisions**. Across all twelve tasks the verifier can compare **1,906,400** decisions.
+The demo `med_01` has 30 users, 7 groups, 60 resources, 4 actions, and 6 contexts, for **43,200 decisions**. `hard_08` has 145 users, 28 groups, 200 resources, 4 actions, 11 context variants and 40 statements, for **1,276,000 decisions**. Across all twenty tasks the verifier can compare **9,935,704** decisions.
 
-The agent does not get the matrix. It gets 5-9 visible examples, a `simulate` tool that evaluates one request at a time against the current candidate policy, and a `check_examples` tool that only checks the visible examples. Even exhausting the entire 40-turn, 10-call budget yields at most 400 simulations, which is less than 1% of the `med_01` matrix. Six visible examples cover roughly 0.014% of `med_01`; nine cover roughly 0.002% of `hard_04`.
+The agent does not get the matrix. It gets 5-10 visible examples, a `simulate` tool that evaluates one request at a time against the current candidate policy, and a `check_examples` tool that only checks the visible examples. Even exhausting the entire 40-turn, 10-call budget yields at most 400 simulations, which is less than 1% of the `med_01` matrix. Six visible examples cover roughly 0.014% of `med_01`; ten cover roughly 0.0008% of `hard_08`.
 
 That sparse observation channel is the point. The task is underdetermined at the example level but fully determined at the semantic level. The agent must infer the correct symbolic policy and rely on the rules, not enumerate the matrix.
 
@@ -121,7 +121,7 @@ This is why the benchmark stresses model reasoning rather than pattern matching.
 4. Construct a compact policy whose behavior matches the intended decisions.
 5. Avoid over-permission and under-permission across unmentioned names and context slices.
 
-The six mutation classes are designed to require that reasoning: `drop_statement`, `widen_wildcard`, `remove_condition`, `remove_deny`, `change_group`, and `flip_effect`. Each mutation is applied only where it has measurable impact on a sampled portion of the hidden matrix.
+The eight mutation classes are designed to require that reasoning: `drop_statement`, `widen_wildcard`, `remove_condition`, `remove_deny`, `change_group`, `flip_effect`, `remove_exception`, and `swap_condition`. Each mutation is applied only where it has measurable impact on a sampled portion of the hidden matrix.
 
 ---
 
@@ -207,7 +207,7 @@ The harness also records suspicion telemetry: unknown tools, parse failures, pat
 
 ### 4. Deterministic seeding and reproducibility
 
-`tasks.json` defines twelve tasks with fixed dimensions and seeds. `verifier/generator.py` uses `random.Random(seed)` for world construction, group membership, resource tags, statement generation, mutation selection, visible examples, and sample selection. The harness passes `SEED` as the override, so the same `(task_id, seed)` produces the same task and matrix on every run.
+`tasks.json` defines twenty tasks with fixed dimensions and seeds. `verifier/generator.py` uses `random.Random(seed)` for world construction, group membership, resource tags, statement generation, mutation selection, visible examples, and sample selection. The harness passes `SEED` as the override, so the same `(task_id, seed)` produces the same task and matrix on every run.
 
 Determinism is reinforced by:
 
@@ -276,7 +276,7 @@ The gate in `runner.py` resets each selected task in the verifier, obtains the o
 | Allow-all | 0.000 | `<= 0.001` |
 | Deny-all | 0.000 | `<= 0.001` |
 
-The `med_01` gate passed in about 0.5 seconds in Docker. The full twelve-task gate passed in about 15.7 seconds. If the gate fails, the harness writes a `gate_failed` summary and exits `2` without calling the model.
+The `med_01` gate passed in about 0.5 seconds in Docker. The full twenty-task gate passed at seed 0 in about 110 seconds locally, including generation and scoring of the 1.28M-decision hard tasks. If the gate fails, the harness writes a `gate_failed` summary and exits `2` without calling the model.
 
 ### 2. Episode loop
 
@@ -424,8 +424,8 @@ The failure is exact: the broken policy's weighted errors equal `E_start`, so th
 
 | Check | Result |
 | --- | --- |
-| Unit/integration suite | `77 passed` in about 20s |
-| Twelve-task baseline gate | `12/12` passed, about 15.7s |
+| Unit/integration suite | `79 passed` in about 29s |
+| Twenty-task baseline gate | `20/20` passed, about 110s |
 | Demo success trace | `med_01`, 3 steps, `1.0`, 0 false allows/denies |
 | Real success trace | `gpt-6-luna` `med_01`, 5 steps, `1.0`, 14.2s |
 | Real success trace | `gpt-6-luna` `easy_01`, 5 steps, `1.0`, 18.1s |
@@ -470,5 +470,5 @@ Current limitations are explicit:
 | `docker-compose.yml` | Three-service isolation, healthchecks, networks, resource limits |
 | `scripts/reference_solution.py` | Runnable reference-solution baseline |
 | `scripts/noop_agent.py` | Runnable no-op baseline |
-| `tasks.json` | Twelve task configurations |
+| `tasks.json` | Twenty task configurations |
 | `sample-trajectories/*/episode.jsonl` | Real execution transcripts used above |

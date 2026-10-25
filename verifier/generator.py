@@ -37,6 +37,14 @@ CONDITION_POOL: tuple[tuple[str, str], ...] = (
     ("mfa", "false"),
 )
 
+# Hard tasks add a third context dimension.  Keep the legacy pool above for
+# easy/medium so their generated tasks remain byte-for-byte reproducible.
+CONDITION_VALUES: dict[str, tuple[str, ...]] = {
+    "network": ("corp", "vpn", "guest"),
+    "mfa": ("true", "false"),
+    "device": ("managed", "unmanaged"),
+}
+
 
 class GenerationError(RuntimeError):
     """The generator could not produce a valid task for a seed."""
@@ -206,11 +214,18 @@ def _build_world(rng: random.Random, config: TaskConfig) -> World:
     ]
 
     members: dict[str, set[str]] = {group_id: set() for group_id in group_ids}
-    ungrouped_probability = 0.08 if config.tier != "easy" else 0.03
+    ungrouped_probability = {
+        "easy": 0.03,
+        "medium": 0.08,
+        "hard": 0.02,
+    }[config.tier]
     for user_id in user_ids:
         if rng.random() < ungrouped_probability:
             continue
-        count = 1 if rng.random() < 0.82 else 2
+        if config.tier == "hard":
+            count = 1 if rng.random() < 0.58 else (2 if rng.random() < 0.82 else 3)
+        else:
+            count = 1 if rng.random() < 0.82 else 2
         chosen = rng.sample(group_ids, min(count, len(group_ids)))
         for group_id in chosen:
             members[group_id].add(f"user:{user_id}")
@@ -218,12 +233,18 @@ def _build_world(rng: random.Random, config: TaskConfig) -> World:
         if not members[group_id]:
             members[group_id].add(f"user:{rng.choice(user_ids)}")
 
-    nested_probability = {"easy": 0.20, "medium": 0.38, "hard": 0.50}[
+    nested_probability = {"easy": 0.20, "medium": 0.38, "hard": 0.74}[
         config.tier
     ]
-    for index in range(2, len(group_ids)):
-        if rng.random() < nested_probability:
-            parent = group_ids[rng.randrange(0, index)]
+    start_index = 1 if config.tier == "hard" else 2
+    for index in range(start_index, len(group_ids)):
+        if rng.random() >= nested_probability:
+            continue
+        max_parents = 1
+        if config.tier == "hard" and rng.random() < 0.42:
+            max_parents = 2
+        parents = rng.sample(group_ids[:index], min(max_parents, index))
+        for parent in parents:
             members[group_ids[index]].add(f"group:{parent}")
 
     groups = {
@@ -242,7 +263,12 @@ def _build_world(rng: random.Random, config: TaskConfig) -> World:
 
     resource_tags: dict[str, list[str]] = {}
     for index, resource_id in enumerate(resource_ids):
-        if index < len(all_tags):
+        if config.tier == "hard":
+            # Overlapping tags create many near-miss selectors: a statement can
+            # match a tagged resource through a tag the broken policy never
+            # mentions directly.
+            tags = rng.sample(all_tags, 2 if rng.random() < 0.55 else 3)
+        elif index < len(all_tags):
             tags = [all_tags[index]]
             if rng.random() < 0.45:
                 extra = rng.choice(all_tags)
@@ -282,10 +308,14 @@ def _principal_selectors(
 
     user_ids = sorted(world.users)
     group_ids = sorted(world.groups)
-    count = 1 if rng.random() < 0.65 else 2
+    if tier == "hard":
+        count = 1 if rng.random() < 0.42 else (2 if rng.random() < 0.80 else 3)
+    else:
+        count = 1 if rng.random() < 0.65 else 2
+    group_weight = 0.66 if tier == "hard" else 0.58
     chosen: list[str] = []
     while len(chosen) < count:
-        if group_ids and (not user_ids or rng.random() < 0.58):
+        if group_ids and (not user_ids or rng.random() < group_weight):
             selector = f"group:{rng.choice(group_ids)}"
         else:
             selector = f"user:{rng.choice(user_ids)}"
@@ -314,10 +344,10 @@ def _resource_selectors(
             for tag in resource.tags
         }
     )
-    count = rng.randint(1, 3)
+    count = rng.randint(1, 4) if tier == "hard" else rng.randint(1, 3)
     chosen: list[str] = []
     while len(chosen) < count:
-        if tags and rng.random() < 0.38:
+        if tags and rng.random() < (0.46 if tier == "hard" else 0.38):
             selector = f"tag:{rng.choice(tags)}"
         else:
             selector = f"resource:{rng.choice(resource_ids)}"
@@ -327,14 +357,25 @@ def _resource_selectors(
 
 
 def _action_selectors(rng: random.Random, *, tier: str) -> list[str]:
-    if tier == "hard" and rng.random() < 0.07:
-        return ["*"]
+    if tier == "hard":
+        if rng.random() < 0.05:
+            return ["*"]
+        count = 1 if rng.random() < 0.45 else (2 if rng.random() < 0.82 else 3)
+        return rng.sample(list(ALL_ACTIONS), count)
     count = 1 if rng.random() < 0.72 else 2
     return rng.sample(list(ALL_ACTIONS), count)
 
 
 def _condition(rng: random.Random, *, force: bool, tier: str) -> dict[str, str] | None:
-    probability = {"easy": 0.16, "medium": 0.36, "hard": 0.50}[tier]
+    if tier == "hard":
+        probability = 0.66
+        if not force and rng.random() >= probability:
+            return None
+        count = 1 if rng.random() < 0.48 else (2 if rng.random() < 0.86 else 3)
+        keys = rng.sample(list(CONDITION_VALUES), min(count, len(CONDITION_VALUES)))
+        return {key: rng.choice(CONDITION_VALUES[key]) for key in keys}
+
+    probability = {"easy": 0.16, "medium": 0.36}[tier]
     if not force and rng.random() >= probability:
         return None
     count = 1 if rng.random() < 0.60 else 2
@@ -353,7 +394,7 @@ def _exceptions(
     *,
     tier: str,
 ) -> list[str]:
-    probability = {"easy": 0.0, "medium": 0.16, "hard": 0.24}[tier]
+    probability = {"easy": 0.0, "medium": 0.16, "hard": 0.36}[tier]
     if rng.random() >= probability:
         return []
     principal_set = set(principals)
@@ -370,6 +411,25 @@ def _exceptions(
         return []
     count = 1 if rng.random() < 0.8 else 2
     return rng.sample(candidates, min(count, len(candidates)))
+
+
+def _forced_exceptions(
+    rng: random.Random,
+    world: World,
+    *,
+    count: int = 2,
+) -> list[str]:
+    """Choose exceptions broad enough to survive sampled-impact checks."""
+
+    group_candidates = [
+        f"group:{group_id}" for group_id in sorted(world.groups)
+    ]
+    user_candidates = [f"user:{user_id}" for user_id in sorted(world.users)]
+    chosen = rng.sample(group_candidates, min(count, len(group_candidates)))
+    remaining = count - len(chosen)
+    if remaining > 0:
+        chosen.extend(rng.sample(user_candidates, min(remaining, len(user_candidates))))
+    return chosen
 
 
 def _make_statement(
@@ -399,6 +459,26 @@ def _make_statement(
             ]
             condition = None
             exceptions: list[str] = []
+        elif forced_kind == "remove_exception":
+            principals = ["*"]
+            actions = rng.sample(list(ALL_ACTIONS), 2)
+            resource_ids = rng.sample(
+                safe_resources, min(2, len(safe_resources))
+            )
+            resources = [f"resource:{resource_id}" for resource_id in resource_ids]
+            condition = None
+            exceptions = _forced_exceptions(rng, world)
+        elif forced_kind == "swap_condition":
+            principals = [
+                f"group:{rng.choice(sorted(world.groups))}"
+            ]
+            actions = rng.sample(list(ALL_ACTIONS), 2)
+            resource_ids = rng.sample(
+                safe_resources, min(2, len(safe_resources))
+            )
+            resources = [f"resource:{resource_id}" for resource_id in resource_ids]
+            condition = _condition(rng, force=True, tier=tier)
+            exceptions = []
         elif broad_forced:
             principals = [
                 f"group:{rng.choice(sorted(world.groups))}"
@@ -543,6 +623,15 @@ def _build_correct_policy(
     return Policy(statements=statements), feature_targets, protected_ids
 
 
+def _alternate_condition_value(key: str, value: str) -> str | None:
+    alternatives = [
+        candidate
+        for candidate in CONDITION_VALUES.get(key, ())
+        if candidate != value
+    ]
+    return alternatives[0] if alternatives else None
+
+
 def _supports_mutation(kind: str, statement: Statement, world: World) -> bool:
     if kind == "drop_statement":
         return True
@@ -559,6 +648,13 @@ def _supports_mutation(kind: str, statement: Statement, world: World) -> bool:
     if kind == "change_group":
         return len(world.groups) >= 2 and any(
             principal.startswith("group:") for principal in statement.principals
+        )
+    if kind == "remove_exception":
+        return bool(statement.exceptions)
+    if kind == "swap_condition":
+        return any(
+            _alternate_condition_value(key, value) is not None
+            for key, value in (statement.condition or {}).items()
         )
     return False
 
@@ -604,6 +700,23 @@ def _mutate_statement(
             for principal in statement.principals
         ]
         return _rebuild(statement, principals=principals)
+    if kind == "remove_exception":
+        return _rebuild(statement, exceptions=[])
+    if kind == "swap_condition":
+        condition = dict(statement.condition or {})
+        candidates = [
+            key
+            for key, value in condition.items()
+            if _alternate_condition_value(key, value) is not None
+        ]
+        if not candidates:
+            return None
+        key = rng.choice(candidates)
+        alternative = _alternate_condition_value(key, condition[key])
+        if alternative is None:
+            return None
+        condition[key] = alternative
+        return _rebuild(statement, condition=condition)
     return None
 
 

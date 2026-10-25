@@ -18,6 +18,8 @@ MUTATION_KINDS: tuple[str, ...] = (
     "remove_deny",
     "change_group",
     "flip_effect",
+    "remove_exception",
+    "swap_condition",
 )
 
 CONTEXTS_BY_TIER: dict[str, tuple[dict[str, str], ...]] = {
@@ -43,7 +45,11 @@ CONTEXTS_BY_TIER: dict[str, tuple[dict[str, str], ...]] = {
         {"network": "guest"},
         {"mfa": "true"},
         {"mfa": "false"},
+        {"device": "managed"},
+        {"device": "unmanaged"},
         {"network": "vpn", "mfa": "false"},
+        {"network": "corp", "mfa": "true", "device": "managed"},
+        {"network": "guest", "mfa": "false", "device": "unmanaged"},
     ),
 }
 

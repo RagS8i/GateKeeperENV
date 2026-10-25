@@ -204,7 +204,7 @@ feature target is tried first; other compatible statements are fallbacks.
 Destructive mutations (`drop_statement`, `remove_deny`) are ordered last so
 earlier mutations have stable targets.
 
-The six classes:
+The eight classes:
 
 | Class | Meaning |
 | --- | --- |
@@ -214,6 +214,12 @@ The six classes:
 | `remove_deny` | Remove a deny statement rather than merely editing it. |
 | `change_group` | Point a group selector at another group. |
 | `flip_effect` | Turn allow into deny or vice versa. |
+| `remove_exception` | Delete a statement's principal exceptions. |
+| `swap_condition` | Change a condition value to a different value for the same key. |
+
+Hard tasks apply all eight classes, with 8-11 mutation instances over 32-40
+statements. Their context matrix adds a third dimension (`device`) and 11
+variants, and group nesting is denser than in the easy and medium tiers.
 
 ### 7.5 Sampling and `E_start`
 
@@ -409,12 +415,14 @@ The repository includes 79 tests:
 
 Local evidence:
 
-- All twelve tasks passed the four-baseline gate at seed 0 in about 15.7
+- All twenty tasks passed the four-baseline gate at seed 0 in about 110.1
   seconds, including generation and scoring.
 - Standalone generation soaks: `easy_01` 1,000 seeds with zero failures;
   `easy_02` 50; `med_01` 20; `med_02`/`med_03`/`med_04` 10 each; hard tasks
   2-3 seeds each. No failures after the mutation fallback was widened.
-- Easy generation is about 0.14-0.21s; hard generation is roughly 8-20s.
+- Medium generation is about 0.1-2.3s; hard generation is roughly 4-8s at
+  seed 0 and up to about 30s for other seeds, for matrices of 0.95M-1.28M
+  decisions.
 - The offline solver solves `med_01` in three batched turns with score 1.0.
 - The offline no-op, allow-all and deny-all clients all score 0.0.
 
@@ -422,7 +430,8 @@ Docker Compose was executed on the development machine on 2026-10-25: all
 three images built, the three services started, the `med_01` gate passed
 (oracle 1.000, no-op/allow-all/deny-all 0.000), and the offline solver finished
 with score 1.0 in three steps. A clean `--no-cache` three-image build took
-21.8s; the Docker all-task gate took 15.7s.
+21.8s. After the task-set expansion, the local in-process twenty-task gate
+completed in 110.1s at seed 0.
 
 The same one-command contract was exercised with `gpt-6-luna`:
 
@@ -437,8 +446,9 @@ are also copied into `sample-trajectories/`.
 
 - **Generation cost.** Full-matrix scoring for hard tasks and candidate mutation
   trials is expensive. The generator uses a fixed sample for mutation impact and
-  a cache keyed by `(task_id, seed)`. Hard tasks took roughly 8-20 seconds on
-  first generation.
+  a cache keyed by `(task_id, seed)`. Hard tasks took roughly 4-8 seconds at
+  seed 0 and up to about 30 seconds for other seeds, while the 20-task baseline
+  gate took about 110 seconds.
 - **Deny-list shape.** The protected allow-all baseline makes the correct policy
   less like a typical least-privilege policy. It is a deliberate anti-gaming
   tradeoff that guarantees allow-all and deny-all both fail.
